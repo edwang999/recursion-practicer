@@ -1,0 +1,4036 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recursion Practicer</title>
+<meta name="description" content="Practice recursion: build a function one step at a time, or trace Python and Gleam calls and predict each result.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a workbench. The problem or code on the left, the work on the right; one column on phones. */
+:root {
+  --bg: #f3f4ef;
+  --panel: #ffffff;
+  --ink: #1b2220;
+  --muted: #5a6661;
+  --line: #d8ddd5;
+  --code-bg: #eceee8;
+  --accent: #2f46bd;
+  --accent-ink: #ffffff;
+  --accent-soft: #e5e8fb;
+  --ok: #1c7547;
+  --ok-soft: #dff1e6;
+  --bad: #b3261e;
+  --bad-soft: #fbe7e5;
+  --shown: #5a5f77;
+  --shown-soft: #eaecf3;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111513; --panel: #19201d; --ink: #e4ebe7; --muted: #95a49d; --line: #2b3531;
+    --code-bg: #212925; --accent: #94a5ff; --accent-ink: #10142b; --accent-soft: #232a4c;
+    --ok: #63d49c; --ok-soft: #163325; --bad: #ff8d84; --bad-soft: #3b1f1c;
+    --shown: #aab0c8; --shown-soft: #252a37; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111513; --panel: #19201d; --ink: #e4ebe7; --muted: #95a49d; --line: #2b3531;
+  --code-bg: #212925; --accent: #94a5ff; --accent-ink: #10142b; --accent-soft: #232a4c;
+  --ok: #63d49c; --ok-soft: #163325; --bad: #ff8d84; --bad-soft: #3b1f1c;
+  --shown: #aab0c8; --shown-soft: #252a37; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-block: 20px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 16px;
+}
+code, pre, textarea, input.mono { font-family: var(--font-mono); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 16px; }
+.top h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.top p { margin: 4px 0 0; color: var(--muted); max-width: 66ch; }
+.tag {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px;
+}
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab {
+  background: none; border: 0; border-bottom: 3px solid transparent;
+  padding: 8px 14px 9px; margin-bottom: -1px; cursor: pointer; white-space: nowrap;
+  font-weight: 700; color: var(--muted);
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* Workbench */
+.bench { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; align-items: start; }
+@media (max-width: 880px) { .bench { grid-template-columns: minmax(0, 1fr); } }
+.pane {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; display: grid; gap: 12px; min-width: 0;
+}
+.pane h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; line-height: 1.2;
+}
+.pane h3 { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin: 0; line-height: 1.25; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+select, textarea, input.mono {
+  width: 100%; max-width: 100%; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 14px;
+}
+textarea {
+  min-height: 260px; resize: vertical; line-height: 1.55; tab-size: 4; white-space: pre; overflow: auto;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 6px;
+  padding: 7px 14px; font-weight: 700; cursor: pointer;
+}
+.btn:hover { background: var(--code-bg); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.hint { font-size: 13px; color: var(--muted); }
+details.subset { font-size: 13px; color: var(--muted); }
+details.subset summary { cursor: pointer; font-weight: 700; }
+details.subset p { margin: 6px 0 0; }
+.codeblock {
+  margin: 0; background: var(--code-bg); border-radius: 6px; padding: 12px; overflow-x: auto;
+  font-size: 13.5px; line-height: 1.55;
+}
+
+/* Calls pane */
+.calls-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: start; }
+.calls-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 58ch; }
+.score { display: grid; gap: 6px; justify-items: end; font-size: 14px; }
+.score strong { font-variant-numeric: tabular-nums; }
+.score .bar { width: 160px; height: 6px; border-radius: 999px; background: var(--code-bg); overflow: hidden; }
+.score .bar span { display: block; height: 100%; background: var(--ok); width: 0; transition: width .25s ease; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.banner {
+  border-radius: 6px; padding: 10px 12px; font-size: 14px;
+  background: var(--bad-soft); color: var(--ink); border: 1px solid var(--bad);
+}
+.banner strong { color: var(--bad); }
+.banner.info { background: var(--accent-soft); border-color: var(--accent); }
+.printed { font-size: 13px; }
+.printed pre { margin: 4px 0 0; background: var(--code-bg); padding: 8px 10px; border-radius: 6px; overflow-x: auto; }
+
+.tree { overflow-x: auto; padding-bottom: 4px; }
+.calls { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.calls .calls { margin: 8px 0 0 13px; padding-left: 16px; border-left: 2px solid var(--line); }
+.node { min-width: 0; }
+.row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+}
+.calls.root > .node > .row { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.fold {
+  width: 26px; height: 26px; flex: 0 0 auto; border-radius: 5px; border: 1px solid var(--line);
+  background: var(--code-bg); cursor: pointer; line-height: 1; font-size: 13px; color: var(--muted);
+}
+.fold:hover { color: var(--ink); }
+.tree .row { cursor: pointer; }
+.tree .row .slot { cursor: default; }
+.tree .row .guess { cursor: text; }
+.tree .row:hover .fold { color: var(--ink); border-color: var(--accent); }
+.call { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; min-width: 0; }
+.inside { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.slot { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: auto; }
+.ret { font-size: 13px; color: var(--muted); }
+.guess {
+  font-family: var(--font-mono); font-size: 14px; width: 10ch; min-width: 6ch; max-width: 26ch;
+  field-sizing: content; padding: 4px 8px; border-radius: 5px;
+  border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--ink);
+}
+.guess::placeholder { color: var(--accent); opacity: 1; }
+.guess.is-wrong { border: 1px solid var(--bad); background: var(--bad-soft); }
+.check { padding: 4px 10px; font-size: 13px; }
+.val { font-size: 14px; padding: 3px 8px; border-radius: 5px; overflow-wrap: anywhere; }
+.val.ok { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.val.shown { background: var(--shown-soft); color: var(--shown); }
+.mark { font-size: 12px; font-weight: 700; }
+.mark.ok { color: var(--ok); }
+.mark.shown { color: var(--shown); }
+.nope { font-size: 13px; color: var(--bad); font-weight: 700; }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 13px; }
+.err { font-size: 13px; color: var(--bad); font-weight: 700; }
+.locked {
+  font-size: 13px; color: var(--muted); border: 1px dashed var(--line);
+  border-radius: 5px; padding: 3px 8px;
+}
+.plug-lines { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+mark.plug { background: var(--ok-soft); color: var(--ok); border-radius: 4px; padding: 0 4px; font-weight: 600; }
+mark.plug.pending { background: var(--accent-soft); color: var(--accent); font-weight: 400; }
+.details { margin: 6px 0 0 36px; display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+.binds { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.binds code, .branch code { color: var(--ink); background: var(--code-bg); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+.branch { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.branch .bound { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; margin-left: 6px; }
+.empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+/* Approach */
+.ex-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; }
+.ex-list code { overflow-wrap: anywhere; }
+.steplist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.step {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px;
+  display: grid; gap: 10px; background: var(--panel); min-width: 0;
+}
+.step.is-active { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.step-head { display: flex; align-items: center; gap: 10px; }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  font-size: 13px; font-weight: 700; background: var(--code-bg); color: var(--muted);
+}
+.step.is-active .step-num { background: var(--accent); color: var(--accent-ink); }
+.step.is-done .step-num { background: var(--ok-soft); color: var(--ok); }
+.step.is-locked h3 { color: var(--muted); }
+.step-mark { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ok); white-space: nowrap; }
+.step p { margin: 0; }
+.step .q { max-width: 62ch; }
+.tmpl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 14px; min-width: 0; }
+.tmpl > code { font-size: 14px; }
+.tmpl .guess.wide { width: 24ch; min-width: 12ch; max-width: 100%; }
+.tmpl #ap-combine { field-sizing: fixed; flex: 1 1 18ch; width: auto; min-width: 12ch; max-width: 100%; }
+.tmpl .label { font-family: var(--font-body); font-size: 13px; color: var(--muted); min-width: 4.5em; }
+.tmpl.indent { padding-left: 2.2em; }
+.fb { font-size: 13px; }
+.fb.bad { color: var(--bad); font-weight: 700; }
+.fb.good { color: var(--ok); font-weight: 700; }
+.fb code { font-weight: 400; }
+.mapping { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
+.mapping code { color: var(--ink); }
+.table-wrap { overflow-x: auto; }
+.mini { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mini th, .mini td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.mini th { font-size: 12px; color: var(--muted); font-weight: 700; }
+.mini th code { color: var(--muted); }
+.mini td code, .mini th code { white-space: nowrap; }
+.yes { color: var(--ok); font-weight: 700; }
+.no { color: var(--bad); font-weight: 700; }
+.result { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+.tests { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+.tests li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.tests .why { color: var(--muted); font-size: 13px; }
+
+footer { color: var(--muted); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (max-width: 520px) {
+  .details { margin-left: 4px; }
+  .slot { margin-left: 0; }
+  .calls .calls { margin-left: 6px; padding-left: 10px; }
+  .score { justify-items: start; }
+  .tmpl.indent { padding-left: 1em; }
+}
+</style>
+
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Recursion Practicer</h1>
+      <p>Two ways to practice recursion. Approach: build a recursive function from one smaller call, without tracing. Trace: run a function and predict what each call returns.</p>
+    </div>
+    <span class="tag">Prototype</span>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button class="tab" role="tab" id="tab-approach" aria-controls="panel-approach" type="button">Approach</button>
+    <button class="tab" role="tab" id="tab-python" aria-controls="panel-python" type="button">Trace Python</button>
+    <button class="tab" role="tab" id="tab-gleam" aria-controls="panel-gleam" type="button">Trace Gleam</button>
+  </div>
+
+  <main id="panel-approach" class="bench" role="tabpanel" aria-labelledby="tab-approach">
+    <section class="pane" aria-label="Problem">
+      <div class="field">
+        <label for="ap-problem">Problem</label>
+        <select id="ap-problem"></select>
+      </div>
+      <pre class="codeblock" id="ap-sig"></pre>
+      <div class="field">
+        <h3>Examples</h3>
+        <ul class="ex-list" id="ap-examples"></ul>
+      </div>
+      <details class="subset">
+        <summary>How this works</summary>
+        <p>You never trace in this mode. Each step asks one question, using real values. The page checks your answers with a hidden staff solution, which also gives the trusted answers for the smaller calls. At the end it puts your answers together into a function and runs it on tests.</p>
+      </details>
+    </section>
+    <section class="pane" aria-label="Steps">
+      <div class="calls-head">
+        <div>
+          <h2>Steps</h2>
+          <p>Pick a smaller input, trust what the function returns for it, build the full answer from that, then add a base case.</p>
+        </div>
+        <div class="score" aria-live="polite">
+          <span id="ap-progress"></span>
+          <div class="bar" aria-hidden="true"><span id="ap-bar"></span></div>
+        </div>
+      </div>
+      <ol class="steplist" id="ap-steps"></ol>
+      <div class="field">
+        <h3>Your function so far</h3>
+        <pre class="codeblock" id="ap-sofar"></pre>
+      </div>
+      <div class="result" id="ap-result" hidden></div>
+    </section>
+  </main>
+
+  <main id="panel-python" class="bench" role="tabpanel" aria-labelledby="tab-python"></main>
+  <main id="panel-gleam" class="bench" role="tabpanel" aria-labelledby="tab-gleam"></main>
+
+  <footer>Prototype. Small Python and Gleam interpreters run inside the page, so it works offline and nothing is sent anywhere.</footer>
+</div>
+
+<script>
+// A small Python interpreter for the Recursion Practicer. It runs the subset of
+// Python that recursion practice uses (def, if/elif/else, return, assignment,
+// for/while, lists, tuples, strings, slicing, comprehensions, lambda) and records
+// every call to a function the student defined: its arguments, the return line
+// that ran, its result, and the calls it made. It needs no eval and no network.
+const PyMini = (() => {
+  class PyError extends Error {
+    constructor(type, message, line) {
+      super(message);
+      this.pyType = type;
+      this.line = line ?? null;
+    }
+  }
+  class PyFloat { constructor(v) { this.v = v; } }
+  class PyTuple { constructor(items) { this.items = items; } }
+  class PyFunction {
+    constructor(name, params, body, env, line, isLambda) {
+      Object.assign(this, { name, params, body, env, line, isLambda });
+    }
+  }
+  class PyBuiltin { constructor(name, fn) { this.name = name; this.fn = fn; } }
+
+  const KEYWORDS = new Set(['def', 'if', 'elif', 'else', 'return', 'and', 'or', 'not',
+    'in', 'is', 'None', 'True', 'False', 'pass', 'for', 'while', 'lambda', 'break', 'continue']);
+
+  // ── Tokens ──────────────────────────────────────────────────────────────────
+
+  function readString(src, i, line, raw) {
+    const q = src[i];
+    const triple = src.startsWith(q.repeat(3), i);
+    const close = triple ? q.repeat(3) : q;
+    let j = i + close.length;
+    let out = '';
+    let ln = line;
+    for (;;) {
+      if (j >= src.length) throw new PyError('SyntaxError', 'this string is never closed', line);
+      if (src.startsWith(close, j)) { j += close.length; break; }
+      const c = src[j];
+      if (c === '\n') {
+        if (!triple) throw new PyError('SyntaxError', 'this string is never closed', line);
+        ln++;
+      }
+      if (c === '\\' && !raw) {
+        const d = src[j + 1];
+        const map = { n: '\n', t: '\t', r: '\r', '\\': '\\', "'": "'", '"': '"', 0: '\0' };
+        if (d === '\n') { ln++; j += 2; continue; }
+        if (d in map) { out += map[d]; j += 2; continue; }
+        out += c; j++; continue;
+      }
+      out += c; j++;
+    }
+    return [out, j, ln];
+  }
+
+  function tokenize(source) {
+    const src = source.replace(/\r\n?/g, '\n').replace(/\t/g, '    ');
+    const toks = [];
+    const indents = [0];
+    let depth = 0, i = 0, line = 1, atStart = true;
+    const n = src.length;
+    const push = (type, value, ln = line) => toks.push({ type, value, line: ln });
+    while (i < n) {
+      if (atStart && depth === 0) {
+        let col = 0;
+        while (i < n && src[i] === ' ') { col++; i++; }
+        if (i >= n) break;
+        if (src[i] === '\n') { i++; line++; continue; }
+        if (src[i] === '#') { while (i < n && src[i] !== '\n') i++; continue; }
+        atStart = false;
+        const top = indents[indents.length - 1];
+        if (col > top) { indents.push(col); push('INDENT', col); }
+        else if (col < top) {
+          while (col < indents[indents.length - 1]) { indents.pop(); push('DEDENT', col); }
+          if (col !== indents[indents.length - 1]) {
+            throw new PyError('IndentationError', "this line's indentation doesn't match any block above it", line);
+          }
+        }
+        continue;
+      }
+      const c = src[i];
+      if (c === ' ') { i++; continue; }
+      if (c === '\n') {
+        if (depth === 0) {
+          if (toks.length && toks[toks.length - 1].type !== 'NEWLINE') push('NEWLINE', null);
+          atStart = true;
+        }
+        i++; line++; continue;
+      }
+      if (c === '#') { while (i < n && src[i] !== '\n') i++; continue; }
+      if (c === '\\' && src[i + 1] === '\n') { i += 2; line++; continue; }
+      if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1] || ''))) {
+        let j = i;
+        while (j < n && /[0-9_]/.test(src[j])) j++;
+        let isFloat = false;
+        if (src[j] === '.' && /[0-9]/.test(src[j + 1] || '')) {
+          isFloat = true; j++;
+          while (j < n && /[0-9_]/.test(src[j])) j++;
+        }
+        if (/[eE]/.test(src[j] || '') && /[0-9+-]/.test(src[j + 1] || '')) {
+          isFloat = true; j++;
+          if (/[+-]/.test(src[j])) j++;
+          while (j < n && /[0-9]/.test(src[j])) j++;
+        }
+        const text = src.slice(i, j).replace(/_/g, '');
+        push('NUMBER', isFloat ? new PyFloat(parseFloat(text)) : parseInt(text, 10));
+        i = j; continue;
+      }
+      if (/[A-Za-z_]/.test(c)) {
+        let j = i;
+        while (j < n && /[A-Za-z0-9_]/.test(src[j])) j++;
+        const word = src.slice(i, j);
+        if (/^[rRfFbBuU]{1,2}$/.test(word) && (src[j] === '"' || src[j] === "'")) {
+          if (/[fF]/.test(word)) throw new PyError('SyntaxError', "f-strings aren't supported in this prototype", line);
+          const [val, k, ln] = readString(src, j, line, /[rR]/.test(word));
+          push('STRING', val); line = ln; i = k; continue;
+        }
+        push(KEYWORDS.has(word) ? 'KW' : 'NAME', word);
+        i = j; continue;
+      }
+      if (c === '"' || c === "'") {
+        const [val, k, ln] = readString(src, i, line, false);
+        push('STRING', val); line = ln; i = k; continue;
+      }
+      const three = src.slice(i, i + 3), two = src.slice(i, i + 2);
+      if (three === '**=' || three === '//=') { push('OP', three); i += 3; continue; }
+      if (['**', '//', '==', '!=', '<=', '>=', '+=', '-=', '*=', '/=', '%=', '->'].includes(two)) {
+        push('OP', two); i += 2; continue;
+      }
+      if ('+-*/%<>=()[]{},:.;'.includes(c)) {
+        if ('([{'.includes(c)) depth++;
+        if (')]}'.includes(c)) depth = Math.max(0, depth - 1);
+        push('OP', c); i++; continue;
+      }
+      throw new PyError('SyntaxError', `unexpected character ${JSON.stringify(c)}`, line);
+    }
+    if (toks.length && toks[toks.length - 1].type !== 'NEWLINE') push('NEWLINE', null);
+    while (indents.length > 1) { indents.pop(); push('DEDENT', 0); }
+    push('EOF', null);
+    return toks;
+  }
+
+  // ── Parser ──────────────────────────────────────────────────────────────────
+
+  function describeTok(tk) {
+    switch (tk.type) {
+      case 'NEWLINE': return 'the end of the line';
+      case 'EOF': return 'the end of the code';
+      case 'INDENT': return 'an indented line';
+      case 'DEDENT': return 'the end of a block';
+      case 'STRING': return 'a string';
+      case 'NUMBER': return 'a number';
+      default: return `'${tk.value}'`;
+    }
+  }
+
+  function checkTarget(t, line) {
+    if (t.k === 'Name' || t.k === 'Subscript') return;
+    if (t.k === 'Tuple' && t.items.every(x => x.k === 'Name' || x.k === 'Subscript')) return;
+    throw new PyError('SyntaxError', "you can't assign to this expression", line);
+  }
+
+  class Parser {
+    constructor(toks) { this.t = toks; this.p = 0; }
+    peek(k = 0) { return this.t[Math.min(this.p + k, this.t.length - 1)]; }
+    next() { return this.t[this.p++]; }
+    at(type, value) {
+      const tk = this.peek();
+      return tk.type === type && (value === undefined || tk.value === value);
+    }
+    atOp(v) { return this.at('OP', v); }
+    atKw(v) { return this.at('KW', v); }
+    eat(type, value) { return this.at(type, value) ? this.next() : null; }
+    expect(type, value, what) {
+      if (this.at(type, value)) return this.next();
+      const tk = this.peek();
+      throw new PyError('SyntaxError', `expected ${what || `'${value}'`} but found ${describeTok(tk)}`, tk.line);
+    }
+    endLine() {
+      if (this.eat('NEWLINE') || this.at('EOF') || this.at('DEDENT')) return;
+      const tk = this.peek();
+      throw new PyError('SyntaxError', `unexpected ${describeTok(tk)}`, tk.line);
+    }
+
+    program() {
+      const body = [];
+      while (!this.at('EOF')) {
+        if (this.eat('NEWLINE')) continue;
+        body.push(this.statement());
+      }
+      return body;
+    }
+    statement() {
+      const tk = this.peek();
+      if (tk.type === 'INDENT') throw new PyError('IndentationError', 'this line is indented but nothing above it opens a block', tk.line);
+      if (tk.type === 'DEDENT') { this.next(); return { k: 'Pass', line: tk.line }; }
+      if (tk.type === 'KW') {
+        if (tk.value === 'def') return this.funcdef();
+        if (tk.value === 'if') return this.ifStmt();
+        if (tk.value === 'for') return this.forStmt();
+        if (tk.value === 'while') return this.whileStmt();
+        if (tk.value === 'elif' || tk.value === 'else') {
+          throw new PyError('SyntaxError', `'${tk.value}' needs an 'if' above it at the same indentation`, tk.line);
+        }
+      }
+      const s = this.simple();
+      this.endLine();
+      return s;
+    }
+    simple() {
+      const tk = this.peek();
+      const line = tk.line;
+      if (tk.type === 'NAME' && (tk.value === 'import' || tk.value === 'from' || tk.value === 'class')) {
+        throw new PyError('SyntaxError', `'${tk.value}' isn't supported in this prototype`, line);
+      }
+      if (this.eat('KW', 'return')) {
+        let value = null;
+        if (!this.at('NEWLINE') && !this.at('EOF') && !this.at('DEDENT')) value = this.testList();
+        return { k: 'Return', value, line };
+      }
+      if (this.eat('KW', 'pass')) return { k: 'Pass', line };
+      if (this.eat('KW', 'break')) return { k: 'Break', line };
+      if (this.eat('KW', 'continue')) return { k: 'Continue', line };
+      const expr = this.testList();
+      if (this.atOp('=')) {
+        const parts = [expr];
+        while (this.eat('OP', '=')) parts.push(this.testList());
+        const value = parts.pop();
+        for (const t of parts) checkTarget(t, line);
+        return { k: 'Assign', targets: parts, value, line };
+      }
+      for (const op of ['+=', '-=', '*=', '/=', '//=', '%=', '**=']) {
+        if (this.atOp(op)) {
+          this.next();
+          if (expr.k !== 'Name' && expr.k !== 'Subscript') checkTarget({ k: 'Bad' }, line);
+          return { k: 'AugAssign', target: expr, op: op.slice(0, -1), value: this.testList(), line };
+        }
+      }
+      return { k: 'Expr', value: expr, line };
+    }
+    suite() {
+      if (this.eat('NEWLINE')) {
+        this.expect('INDENT', undefined, 'an indented block');
+        const body = [];
+        while (!this.at('DEDENT') && !this.at('EOF')) {
+          if (this.eat('NEWLINE')) continue;
+          body.push(this.statement());
+        }
+        this.eat('DEDENT');
+        return body;
+      }
+      const s = this.simple();
+      this.endLine();
+      return [s];
+    }
+    params(close) {
+      const params = [];
+      while (!this.atOp(close)) {
+        if (this.atOp('*')) throw new PyError('SyntaxError', "*args isn't supported in this prototype", this.peek().line);
+        const name = this.expect('NAME', undefined, 'a parameter name').value;
+        if (close === ')' && this.eat('OP', ':')) this.test();
+        let def = null;
+        if (this.eat('OP', '=')) def = this.test();
+        params.push({ name, def });
+        if (!this.eat('OP', ',')) break;
+      }
+      return params;
+    }
+    funcdef() {
+      const line = this.next().line;
+      const name = this.expect('NAME', undefined, 'a function name').value;
+      this.expect('OP', '(');
+      const params = this.params(')');
+      this.expect('OP', ')');
+      if (this.eat('OP', '->')) this.test();
+      this.expect('OP', ':');
+      return { k: 'Def', name, params, body: this.suite(), line };
+    }
+    ifStmt() {
+      const line = this.next().line;
+      const test = this.test();
+      this.expect('OP', ':');
+      const body = this.suite();
+      let orelse = [];
+      if (this.atKw('elif')) orelse = [this.ifStmt()];
+      else if (this.eat('KW', 'else')) { this.expect('OP', ':'); orelse = this.suite(); }
+      return { k: 'If', test, body, orelse, line };
+    }
+    forTarget() {
+      const first = this.expect('NAME', undefined, 'a loop variable');
+      const items = [{ k: 'Name', id: first.value, line: first.line }];
+      while (this.atOp(',')) {
+        this.next();
+        const tk = this.expect('NAME', undefined, 'a loop variable');
+        items.push({ k: 'Name', id: tk.value, line: tk.line });
+      }
+      return items.length === 1 ? items[0] : { k: 'Tuple', items, line: first.line };
+    }
+    forStmt() {
+      const line = this.next().line;
+      const target = this.forTarget();
+      this.expect('KW', 'in');
+      const iter = this.testList();
+      this.expect('OP', ':');
+      return { k: 'For', target, iter, body: this.suite(), line };
+    }
+    whileStmt() {
+      const line = this.next().line;
+      const test = this.test();
+      this.expect('OP', ':');
+      return { k: 'While', test, body: this.suite(), line };
+    }
+
+    testList() {
+      const line = this.peek().line;
+      const first = this.test();
+      if (!this.atOp(',')) return first;
+      const items = [first];
+      while (this.eat('OP', ',')) {
+        const tk = this.peek();
+        if (tk.type === 'NEWLINE' || tk.type === 'EOF' || (tk.type === 'OP' && ['=', ')', ']', ':'].includes(tk.value))) break;
+        items.push(this.test());
+      }
+      return { k: 'Tuple', items, line };
+    }
+    test() {
+      if (this.atKw('lambda')) {
+        const line = this.next().line;
+        const params = this.params(':');
+        this.expect('OP', ':');
+        return { k: 'Lambda', params, body: this.test(), line };
+      }
+      const line = this.peek().line;
+      const body = this.orTest();
+      if (this.atKw('if') ) {
+        this.next();
+        const test = this.orTest();
+        this.expect('KW', 'else', "'else'");
+        return { k: 'IfExp', test, body, orelse: this.test(), line };
+      }
+      return body;
+    }
+    orTest() {
+      let left = this.andTest();
+      while (this.atKw('or')) {
+        const line = this.next().line;
+        left = { k: 'Bool', op: 'or', left, right: this.andTest(), line };
+      }
+      return left;
+    }
+    andTest() {
+      let left = this.notTest();
+      while (this.atKw('and')) {
+        const line = this.next().line;
+        left = { k: 'Bool', op: 'and', left, right: this.notTest(), line };
+      }
+      return left;
+    }
+    notTest() {
+      if (this.atKw('not')) {
+        const line = this.next().line;
+        return { k: 'Not', operand: this.notTest(), line };
+      }
+      return this.comparison();
+    }
+    comparison() {
+      const line = this.peek().line;
+      const left = this.arith();
+      const ops = [], rights = [];
+      for (;;) {
+        const tk = this.peek();
+        let op = null;
+        if (tk.type === 'OP' && ['<', '>', '==', '>=', '<=', '!='].includes(tk.value)) { op = tk.value; this.next(); }
+        else if (this.atKw('in')) { this.next(); op = 'in'; }
+        else if (this.atKw('not') && this.peek(1).type === 'KW' && this.peek(1).value === 'in') { this.next(); this.next(); op = 'not in'; }
+        else if (this.atKw('is')) { this.next(); op = this.eat('KW', 'not') ? 'is not' : 'is'; }
+        else break;
+        ops.push(op);
+        rights.push(this.arith());
+      }
+      return ops.length ? { k: 'Compare', left, ops, rights, line } : left;
+    }
+    arith() {
+      let left = this.term();
+      while (this.atOp('+') || this.atOp('-')) {
+        const tk = this.next();
+        left = { k: 'Bin', op: tk.value, left, right: this.term(), line: tk.line };
+      }
+      return left;
+    }
+    term() {
+      let left = this.factor();
+      while (['*', '/', '//', '%'].some(o => this.atOp(o))) {
+        const tk = this.next();
+        left = { k: 'Bin', op: tk.value, left, right: this.factor(), line: tk.line };
+      }
+      return left;
+    }
+    factor() {
+      if (this.atOp('-') || this.atOp('+')) {
+        const tk = this.next();
+        return { k: 'Unary', op: tk.value, operand: this.factor(), line: tk.line };
+      }
+      return this.power();
+    }
+    power() {
+      const base = this.atomExpr();
+      if (this.atOp('**')) {
+        const tk = this.next();
+        return { k: 'Bin', op: '**', left: base, right: this.factor(), line: tk.line };
+      }
+      return base;
+    }
+    atomExpr() {
+      let e = this.atom();
+      for (;;) {
+        if (this.atOp('(')) {
+          const line = this.next().line;
+          const args = [], kwargs = [];
+          while (!this.atOp(')')) {
+            if (this.atOp('*')) throw new PyError('SyntaxError', "*args isn't supported in this prototype", line);
+            if (this.at('NAME') && this.peek(1).type === 'OP' && this.peek(1).value === '=') {
+              const name = this.next().value;
+              this.next();
+              kwargs.push({ name, value: this.test() });
+            } else {
+              const arg = this.test();
+              args.push(this.atKw('for') ? this.compFor(arg, line) : arg);
+            }
+            if (!this.eat('OP', ',')) break;
+          }
+          this.expect('OP', ')');
+          e = { k: 'Call', func: e, args, kwargs, line };
+        } else if (this.atOp('[')) {
+          const line = this.next().line;
+          const index = this.subscript();
+          this.expect('OP', ']');
+          e = { k: 'Subscript', value: e, index, line };
+        } else if (this.atOp('.')) {
+          const line = this.next().line;
+          const attr = this.expect('NAME', undefined, 'a name after the dot').value;
+          e = { k: 'Attr', value: e, attr, line };
+        } else break;
+      }
+      return e;
+    }
+    subscript() {
+      const line = this.peek().line;
+      let lower = null, upper = null, step = null;
+      if (!this.atOp(':')) {
+        lower = this.test();
+        if (!this.atOp(':')) return lower;
+      }
+      this.expect('OP', ':');
+      if (!this.atOp(']') && !this.atOp(':')) upper = this.test();
+      if (this.eat('OP', ':') && !this.atOp(']')) step = this.test();
+      return { k: 'Slice', lower, upper, step, line };
+    }
+    atom() {
+      const tk = this.peek();
+      const line = tk.line;
+      if (tk.type === 'NUMBER') { this.next(); return { k: 'Const', value: tk.value, line }; }
+      if (tk.type === 'STRING') {
+        this.next();
+        let v = tk.value;
+        while (this.at('STRING')) v += this.next().value;
+        return { k: 'Const', value: v, line };
+      }
+      if (tk.type === 'NAME') { this.next(); return { k: 'Name', id: tk.value, line }; }
+      if (tk.type === 'KW' && ['True', 'False', 'None'].includes(tk.value)) {
+        this.next();
+        return { k: 'Const', value: tk.value === 'True' ? true : tk.value === 'False' ? false : null, line };
+      }
+      if (this.atOp('(')) {
+        this.next();
+        if (this.eat('OP', ')')) return { k: 'Tuple', items: [], line };
+        const first = this.test();
+        if (this.atKw('for')) {
+          const comp = this.compFor(first, line);
+          this.expect('OP', ')');
+          return comp;
+        }
+        if (this.atOp(',')) {
+          const items = [first];
+          while (this.eat('OP', ',')) {
+            if (this.atOp(')')) break;
+            items.push(this.test());
+          }
+          this.expect('OP', ')');
+          return { k: 'Tuple', items, line };
+        }
+        this.expect('OP', ')');
+        return first;
+      }
+      if (this.atOp('[')) {
+        this.next();
+        if (this.eat('OP', ']')) return { k: 'List', items: [], line };
+        const first = this.test();
+        if (this.atKw('for')) {
+          const comp = this.compFor(first, line);
+          this.expect('OP', ']');
+          return comp;
+        }
+        const items = [first];
+        while (this.eat('OP', ',')) {
+          if (this.atOp(']')) break;
+          items.push(this.test());
+        }
+        this.expect('OP', ']');
+        return { k: 'List', items, line };
+      }
+      if (this.atOp('{')) throw new PyError('SyntaxError', "dictionaries and sets aren't supported in this prototype", line);
+      throw new PyError('SyntaxError', `unexpected ${describeTok(tk)}`, line);
+    }
+    compFor(elt, line) {
+      const gens = [];
+      while (this.atKw('for')) {
+        this.next();
+        const target = this.forTarget();
+        this.expect('KW', 'in');
+        const iter = this.orTest();
+        const ifs = [];
+        while (this.atKw('if')) { this.next(); ifs.push(this.orTest()); }
+        gens.push({ target, iter, ifs });
+      }
+      return { k: 'ListComp', elt, gens, line };
+    }
+  }
+
+  // ── Values ──────────────────────────────────────────────────────────────────
+
+  const isInt = v => typeof v === 'number';
+  const isNum = v => typeof v === 'number' || typeof v === 'boolean' || v instanceof PyFloat;
+  const numVal = v => (v instanceof PyFloat ? v.v : typeof v === 'boolean' ? (v ? 1 : 0) : v);
+
+  function typeName(v) {
+    if (v === null) return 'NoneType';
+    if (typeof v === 'boolean') return 'bool';
+    if (typeof v === 'number') return 'int';
+    if (v instanceof PyFloat) return 'float';
+    if (typeof v === 'string') return 'str';
+    if (Array.isArray(v)) return 'list';
+    if (v instanceof PyTuple) return 'tuple';
+    if (v instanceof PyFunction) return 'function';
+    if (v instanceof PyBuiltin) return 'builtin_function_or_method';
+    return 'object';
+  }
+
+  function floatRepr(x) {
+    if (Number.isNaN(x)) return 'nan';
+    if (!Number.isFinite(x)) return x > 0 ? 'inf' : '-inf';
+    if (Number.isInteger(x) && Math.abs(x) < 1e16) return x.toFixed(1);
+    return String(x);
+  }
+  function strRepr(s) {
+    const q = s.includes("'") && !s.includes('"') ? '"' : "'";
+    let out = '';
+    for (const ch of s) {
+      if (ch === '\\') out += '\\\\';
+      else if (ch === q) out += '\\' + q;
+      else if (ch === '\n') out += '\\n';
+      else if (ch === '\t') out += '\\t';
+      else out += ch;
+    }
+    return q + out + q;
+  }
+  function repr(v) {
+    if (v === null || v === undefined) return 'None';
+    if (v === true) return 'True';
+    if (v === false) return 'False';
+    if (typeof v === 'number') return String(v);
+    if (v instanceof PyFloat) return floatRepr(v.v);
+    if (typeof v === 'string') return strRepr(v);
+    if (Array.isArray(v)) return '[' + v.map(repr).join(', ') + ']';
+    if (v instanceof PyTuple) {
+      return v.items.length === 1 ? '(' + repr(v.items[0]) + ',)' : '(' + v.items.map(repr).join(', ') + ')';
+    }
+    if (v instanceof PyFunction) return `<function ${v.name}>`;
+    if (v instanceof PyBuiltin) return `<built-in function ${v.name}>`;
+    return String(v);
+  }
+  const pyStr = v => (typeof v === 'string' ? v : repr(v));
+
+  // Python ==. With strict, True is not 1 and 6 is not 6.0, which is what a
+  // prediction should mean.
+  function pyEq(a, b, strict = false) {
+    if (isNum(a) && isNum(b)) {
+      if (strict && typeName(a) !== typeName(b)) return false;
+      return numVal(a) === numVal(b);
+    }
+    if (typeof a === 'string' || typeof b === 'string') return a === b;
+    if (a === null || b === null) return a === b;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return a.length === b.length && a.every((x, i) => pyEq(x, b[i], strict));
+    }
+    if (a instanceof PyTuple && b instanceof PyTuple) {
+      return a.items.length === b.items.length && a.items.every((x, i) => pyEq(x, b.items[i], strict));
+    }
+    return a === b;
+  }
+
+  function truthy(v) {
+    if (v === null || v === false) return false;
+    if (v === true) return true;
+    if (typeof v === 'number') return v !== 0;
+    if (v instanceof PyFloat) return v.v !== 0;
+    if (typeof v === 'string' || Array.isArray(v)) return v.length > 0;
+    if (v instanceof PyTuple) return v.items.length > 0;
+    return true;
+  }
+
+  class Env {
+    constructor(parent) { this.vars = new Map(); this.parent = parent; }
+    lookup(name) {
+      for (let e = this; e; e = e.parent) if (e.vars.has(name)) return e.vars.get(name);
+      return undefined;
+    }
+  }
+
+  function normIndex(i, n, line, what) {
+    if (!isNum(i) || i instanceof PyFloat) {
+      throw new PyError('TypeError', `${what} indices must be integers or slices, not ${typeName(i)}`, line);
+    }
+    let k = numVal(i);
+    if (k < 0) k += n;
+    if (k < 0 || k >= n) throw new PyError('IndexError', `${what} index out of range`, line);
+    return k;
+  }
+
+  // ── Interpreter ─────────────────────────────────────────────────────────────
+
+  class Interp {
+    constructor(src, opts = {}) {
+      this.lines = src.replace(/\r\n?/g, '\n').split('\n');
+      this.builtins = new Env(null);
+      this.globals = new Env(this.builtins);
+      this.output = [];
+      this.steps = 0;
+      this.maxSteps = opts.maxSteps ?? 2000000;
+      this.maxCalls = opts.maxCalls ?? 400;
+      this.maxDepth = opts.maxDepth ?? 200;
+      this.nodes = [];
+      this.stack = [];
+      this.tracing = false;
+      this.depth = 0;
+      this.installBuiltins();
+    }
+    tick(line) {
+      if (++this.steps > this.maxSteps) {
+        throw new PyError('TimeoutError', 'the code ran for too long. Check for a loop or recursion that never stops.', line);
+      }
+    }
+    execBlock(stmts, env) {
+      for (const s of stmts) {
+        const r = this.exec(s, env);
+        if (r) return r;
+      }
+      return null;
+    }
+    exec(s, env) {
+      this.tick(s.line);
+      switch (s.k) {
+        case 'Expr': this.eval(s.value, env); return null;
+        case 'Assign': {
+          const v = this.eval(s.value, env);
+          for (const t of s.targets) this.assign(t, v, env, s.line);
+          return null;
+        }
+        case 'AugAssign': {
+          const cur = this.eval(s.target, env);
+          let v;
+          if (s.op === '+' && Array.isArray(cur)) { cur.push(...this.iterate(this.eval(s.value, env), s.line)); v = cur; }
+          else v = this.binop(s.op, cur, this.eval(s.value, env), s.line);
+          this.assign(s.target, v, env, s.line);
+          return null;
+        }
+        case 'Return': return { type: 'return', value: s.value ? this.eval(s.value, env) : null, line: s.line };
+        case 'If': return truthy(this.eval(s.test, env)) ? this.execBlock(s.body, env) : this.execBlock(s.orelse, env);
+        case 'While': {
+          while (truthy(this.eval(s.test, env))) {
+            const r = this.execBlock(s.body, env);
+            if (r) { if (r.type === 'break') break; if (r.type === 'continue') continue; return r; }
+          }
+          return null;
+        }
+        case 'For': {
+          for (const item of this.iterate(this.eval(s.iter, env), s.line)) {
+            this.assign(s.target, item, env, s.line);
+            const r = this.execBlock(s.body, env);
+            if (r) { if (r.type === 'break') break; if (r.type === 'continue') continue; return r; }
+          }
+          return null;
+        }
+        case 'Def': env.vars.set(s.name, this.makeFunction(s.name, s.params, s.body, env, s.line, false)); return null;
+        case 'Pass': return null;
+        case 'Break': return { type: 'break' };
+        case 'Continue': return { type: 'continue' };
+      }
+      throw new PyError('SyntaxError', 'this statement isn\'t supported in this prototype', s.line);
+    }
+    makeFunction(name, params, body, env, line, isLambda) {
+      const ps = params.map(p => ({ name: p.name, def: p.def ? this.eval(p.def, env) : undefined }));
+      return new PyFunction(name, ps, body, env, line, isLambda);
+    }
+    assign(t, v, env, line) {
+      if (t.k === 'Name') { env.vars.set(t.id, v); return; }
+      if (t.k === 'Subscript') {
+        const obj = this.eval(t.value, env);
+        if (!Array.isArray(obj)) throw new PyError('TypeError', `'${typeName(obj)}' object does not support item assignment`, line);
+        if (t.index.k === 'Slice') throw new PyError('TypeError', "slice assignment isn't supported in this prototype", line);
+        obj[normIndex(this.eval(t.index, env), obj.length, line, 'list assignment')] = v;
+        return;
+      }
+      if (t.k === 'Tuple') {
+        const items = this.iterate(v, line);
+        if (items.length !== t.items.length) {
+          throw new PyError('ValueError', `expected ${t.items.length} values to unpack but got ${items.length}`, line);
+        }
+        t.items.forEach((x, i) => this.assign(x, items[i], env, line));
+        return;
+      }
+      throw new PyError('SyntaxError', "you can't assign to this expression", line);
+    }
+    iterate(v, line) {
+      if (Array.isArray(v)) return v.slice();
+      if (v instanceof PyTuple) return v.items.slice();
+      if (typeof v === 'string') return Array.from(v);
+      throw new PyError('TypeError', `'${typeName(v)}' object is not iterable`, line);
+    }
+    eval(e, env) {
+      this.tick(e.line);
+      switch (e.k) {
+        case 'Const': return e.value;
+        case 'Name': {
+          const v = env.lookup(e.id);
+          if (v === undefined) throw new PyError('NameError', `name '${e.id}' is not defined`, e.line);
+          return v;
+        }
+        case 'List': return e.items.map(x => this.eval(x, env));
+        case 'Tuple': return new PyTuple(e.items.map(x => this.eval(x, env)));
+        case 'Bin': return this.binop(e.op, this.eval(e.left, env), this.eval(e.right, env), e.line);
+        case 'Unary': {
+          const v = this.eval(e.operand, env);
+          if (!isNum(v)) throw new PyError('TypeError', `bad operand type for unary ${e.op}: '${typeName(v)}'`, e.line);
+          if (e.op === '+') return typeof v === 'boolean' ? numVal(v) : v;
+          return v instanceof PyFloat ? new PyFloat(-v.v) : -numVal(v);
+        }
+        case 'Not': return !truthy(this.eval(e.operand, env));
+        case 'Bool': {
+          const l = this.eval(e.left, env);
+          if (e.op === 'and') return truthy(l) ? this.eval(e.right, env) : l;
+          return truthy(l) ? l : this.eval(e.right, env);
+        }
+        case 'Compare': {
+          let left = this.eval(e.left, env);
+          for (let i = 0; i < e.ops.length; i++) {
+            const right = this.eval(e.rights[i], env);
+            if (!this.compare(e.ops[i], left, right, e.line)) return false;
+            left = right;
+          }
+          return true;
+        }
+        case 'IfExp': return truthy(this.eval(e.test, env)) ? this.eval(e.body, env) : this.eval(e.orelse, env);
+        case 'Lambda': return this.makeFunction('lambda', e.params, [{ k: 'Return', value: e.body, line: e.line }], env, e.line, true);
+        case 'Call': return this.evalCall(e, env);
+        case 'Subscript': return this.subscript(this.eval(e.value, env), e.index, env, e.line);
+        case 'Attr': throw new PyError('AttributeError', `'${typeName(this.eval(e.value, env))}' object attributes aren't supported here; only methods like s.append(x)`, e.line);
+        case 'ListComp': {
+          const out = [];
+          const scope = new Env(env);
+          const loop = gi => {
+            if (gi === e.gens.length) { out.push(this.eval(e.elt, scope)); return; }
+            const g = e.gens[gi];
+            for (const item of this.iterate(this.eval(g.iter, scope), e.line)) {
+              this.assign(g.target, item, scope, e.line);
+              if (g.ifs.every(c => truthy(this.eval(c, scope)))) loop(gi + 1);
+            }
+          };
+          loop(0);
+          return out;
+        }
+      }
+      throw new PyError('SyntaxError', "this expression isn't supported in this prototype", e.line);
+    }
+    evalCall(e, env) {
+      if (e.func.k === 'Attr') {
+        const obj = this.eval(e.func.value, env);
+        const args = e.args.map(a => this.eval(a, env));
+        return this.callMethod(obj, e.func.attr, args, e.line);
+      }
+      const f = this.eval(e.func, env);
+      const args = e.args.map(a => this.eval(a, env));
+      const kwargs = e.kwargs.map(kw => ({ name: kw.name, value: this.eval(kw.value, env) }));
+      return this.call(f, args, kwargs, e.line);
+    }
+    call(f, args, kwargs, line) {
+      if (f instanceof PyBuiltin) {
+        if (kwargs.length) throw new PyError('TypeError', `${f.name}() doesn't take keyword arguments in this prototype`, line);
+        return f.fn(args, line);
+      }
+      if (!(f instanceof PyFunction)) throw new PyError('TypeError', `'${typeName(f)}' object is not callable`, line);
+      const ps = f.params;
+      if (args.length > ps.length) {
+        throw new PyError('TypeError', `${f.name}() takes ${ps.length} positional argument${ps.length === 1 ? '' : 's'} but ${args.length} ${args.length === 1 ? 'was' : 'were'} given`, line);
+      }
+      const bound = new Map();
+      args.forEach((a, i) => bound.set(ps[i].name, a));
+      for (const kw of kwargs) {
+        if (!ps.some(p => p.name === kw.name)) throw new PyError('TypeError', `${f.name}() got an unexpected keyword argument '${kw.name}'`, line);
+        if (bound.has(kw.name)) throw new PyError('TypeError', `${f.name}() got multiple values for argument '${kw.name}'`, line);
+        bound.set(kw.name, kw.value);
+      }
+      const missing = [];
+      for (const p of ps) {
+        if (!bound.has(p.name)) {
+          if (p.def !== undefined) bound.set(p.name, p.def);
+          else missing.push(p.name);
+        }
+      }
+      if (missing.length) {
+        throw new PyError('TypeError', `${f.name}() missing ${missing.length} required argument${missing.length === 1 ? '' : 's'}: ${missing.map(m => `'${m}'`).join(' and ')}`, line);
+      }
+      const frame = new Env(f.env);
+      for (const p of ps) frame.vars.set(p.name, bound.get(p.name));
+
+      let node = null;
+      if (this.tracing && !f.isLambda) {
+        if (this.nodes.length >= this.maxCalls) {
+          throw new PyError('LimitError', `this makes more than ${this.maxCalls} calls, which is too many to practice on. Try a smaller input.`, line);
+        }
+        const parent = this.stack.length ? this.stack[this.stack.length - 1] : null;
+        node = {
+          id: this.nodes.length,
+          name: f.name,
+          params: ps.map(p => p.name),
+          args: ps.map(p => repr(bound.get(p.name))),
+          parent: parent ? parent.id : null,
+          callLine: line,
+          children: [],
+          depth: this.stack.length,
+          result: undefined,
+          resultRepr: null,
+          retLine: null,
+          error: null,
+        };
+        this.nodes.push(node);
+        if (parent) parent.children.push(node.id);
+        this.stack.push(node);
+      }
+      if (++this.depth > this.maxDepth) {
+        this.depth--;
+        if (node) this.stack.pop();
+        const err = new PyError('RecursionError', 'maximum recursion depth exceeded. Check that every call gets closer to a base case.', line);
+        if (node) node.error = err;
+        throw err;
+      }
+      try {
+        const r = this.execBlock(f.body, frame);
+        const value = r && r.type === 'return' ? r.value : null;
+        if (node) {
+          node.result = value;
+          node.resultRepr = repr(value);
+          node.retLine = r && r.type === 'return' ? r.line : null;
+        }
+        return value;
+      } catch (err) {
+        if (node && !node.error) node.error = err;
+        throw err;
+      } finally {
+        this.depth--;
+        if (node) this.stack.pop();
+      }
+    }
+    callMethod(obj, name, args, line) {
+      const need = (k) => {
+        if (args.length !== k) throw new PyError('TypeError', `${name}() takes ${k} argument${k === 1 ? '' : 's'} (${args.length} given)`, line);
+      };
+      if (Array.isArray(obj)) {
+        switch (name) {
+          case 'append': need(1); obj.push(args[0]); return null;
+          case 'extend': need(1); obj.push(...this.iterate(args[0], line)); return null;
+          case 'insert': need(2); obj.splice(Math.max(0, Math.min(obj.length, numVal(args[0]) < 0 ? obj.length + numVal(args[0]) : numVal(args[0]))), 0, args[1]); return null;
+          case 'pop': {
+            if (!obj.length) throw new PyError('IndexError', 'pop from empty list', line);
+            const k = args.length ? normIndex(args[0], obj.length, line, 'pop') : obj.length - 1;
+            return obj.splice(k, 1)[0];
+          }
+          case 'index': {
+            need(1);
+            const k = obj.findIndex(x => pyEq(x, args[0]));
+            if (k < 0) throw new PyError('ValueError', `${repr(args[0])} is not in list`, line);
+            return k;
+          }
+          case 'count': need(1); return obj.filter(x => pyEq(x, args[0])).length;
+          case 'copy': need(0); return obj.slice();
+          case 'reverse': need(0); obj.reverse(); return null;
+          case 'sort': need(0); obj.sort((a, b) => this.cmp(a, b, line)); return null;
+        }
+      }
+      if (typeof obj === 'string') {
+        switch (name) {
+          case 'upper': need(0); return obj.toUpperCase();
+          case 'lower': need(0); return obj.toLowerCase();
+          case 'strip': need(0); return obj.trim();
+          case 'split': return args.length ? obj.split(pyStr(args[0])) : obj.trim().split(/\s+/).filter(Boolean);
+          case 'join': need(1); return this.iterate(args[0], line).map(x => {
+            if (typeof x !== 'string') throw new PyError('TypeError', `sequence item: expected str instance, ${typeName(x)} found`, line);
+            return x;
+          }).join(obj);
+          case 'startswith': need(1); return obj.startsWith(pyStr(args[0]));
+          case 'endswith': need(1); return obj.endsWith(pyStr(args[0]));
+          case 'replace': need(2); return obj.split(pyStr(args[0])).join(pyStr(args[1]));
+          case 'count': need(1); return obj.split(pyStr(args[0])).length - 1;
+        }
+      }
+      throw new PyError('AttributeError', `'${typeName(obj)}' object has no attribute '${name}' in this prototype`, line);
+    }
+    subscript(obj, idx, env, line) {
+      const what = Array.isArray(obj) ? 'list' : typeof obj === 'string' ? 'string' : obj instanceof PyTuple ? 'tuple' : null;
+      if (!what) throw new PyError('TypeError', `'${typeName(obj)}' object is not subscriptable`, line);
+      const seq = obj instanceof PyTuple ? obj.items : obj;
+      if (idx.k === 'Slice') {
+        const get = x => {
+          if (x === null) return null;
+          const v = this.eval(x, env);
+          if (v === null) return null;
+          if (!isNum(v) || v instanceof PyFloat) throw new PyError('TypeError', 'slice indices must be integers or None', line);
+          return numVal(v);
+        };
+        const n = seq.length;
+        let lo = get(idx.lower), hi = get(idx.upper), step = get(idx.step);
+        if (step === null) step = 1;
+        if (step === 0) throw new PyError('ValueError', 'slice step cannot be zero', line);
+        const out = [];
+        if (step > 0) {
+          lo = lo === null ? 0 : lo < 0 ? Math.max(0, lo + n) : Math.min(lo, n);
+          hi = hi === null ? n : hi < 0 ? Math.max(0, hi + n) : Math.min(hi, n);
+          for (let k = lo; k < hi; k += step) out.push(seq[k]);
+        } else {
+          lo = lo === null ? n - 1 : lo < 0 ? Math.max(-1, lo + n) : Math.min(lo, n - 1);
+          hi = hi === null ? -1 : hi < 0 ? Math.max(-1, hi + n) : Math.min(hi, n - 1);
+          for (let k = lo; k > hi; k += step) out.push(seq[k]);
+        }
+        if (typeof obj === 'string') return out.join('');
+        return obj instanceof PyTuple ? new PyTuple(out) : out;
+      }
+      return seq[normIndex(this.eval(idx, env), seq.length, line, what)];
+    }
+    binop(op, a, b, line) {
+      const nums = isNum(a) && isNum(b);
+      const anyFloat = a instanceof PyFloat || b instanceof PyFloat;
+      const num = (f) => (anyFloat ? new PyFloat(f(numVal(a), numVal(b))) : f(numVal(a), numVal(b)));
+      switch (op) {
+        case '+':
+          if (nums) return num((x, y) => x + y);
+          if (typeof a === 'string' && typeof b === 'string') return a + b;
+          if (Array.isArray(a) && Array.isArray(b)) return a.concat(b);
+          if (a instanceof PyTuple && b instanceof PyTuple) return new PyTuple(a.items.concat(b.items));
+          if (typeof a === 'string' || Array.isArray(a)) {
+            throw new PyError('TypeError', `can only concatenate ${typeName(a)} (not "${typeName(b)}") to ${typeName(a)}`, line);
+          }
+          break;
+        case '-': if (nums) return num((x, y) => x - y); break;
+        case '*': {
+          if (nums) return num((x, y) => x * y);
+          const seqTimes = (s, k) => {
+            const c = Math.max(0, numVal(k));
+            if (typeof s === 'string') return s.repeat(c);
+            const items = s instanceof PyTuple ? s.items : s;
+            let out = [];
+            for (let i = 0; i < c; i++) out = out.concat(items);
+            return s instanceof PyTuple ? new PyTuple(out) : out;
+          };
+          const isSeq = v => typeof v === 'string' || Array.isArray(v) || v instanceof PyTuple;
+          if (isSeq(a) && isNum(b) && !(b instanceof PyFloat)) return seqTimes(a, b);
+          if (isSeq(b) && isNum(a) && !(a instanceof PyFloat)) return seqTimes(b, a);
+          break;
+        }
+        case '/':
+          if (nums) {
+            if (numVal(b) === 0) throw new PyError('ZeroDivisionError', 'division by zero', line);
+            return new PyFloat(numVal(a) / numVal(b));
+          }
+          break;
+        case '//':
+          if (nums) {
+            if (numVal(b) === 0) throw new PyError('ZeroDivisionError', 'integer division or modulo by zero', line);
+            return num((x, y) => Math.floor(x / y));
+          }
+          break;
+        case '%':
+          if (nums) {
+            if (numVal(b) === 0) throw new PyError('ZeroDivisionError', 'integer modulo by zero', line);
+            return num((x, y) => x - y * Math.floor(x / y));
+          }
+          break;
+        case '**':
+          if (nums) {
+            if (!anyFloat && numVal(b) >= 0) return Math.pow(numVal(a), numVal(b));
+            return new PyFloat(Math.pow(numVal(a), numVal(b)));
+          }
+          break;
+      }
+      throw new PyError('TypeError', `unsupported operand type(s) for ${op}: '${typeName(a)}' and '${typeName(b)}'`, line);
+    }
+    cmp(a, b, line, op = '<') {
+      if (isNum(a) && isNum(b)) return Math.sign(numVal(a) - numVal(b));
+      if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : a > b ? 1 : 0;
+      const sa = Array.isArray(a) ? a : a instanceof PyTuple ? a.items : null;
+      const sb = Array.isArray(b) ? b : b instanceof PyTuple ? b.items : null;
+      if (sa && sb && Array.isArray(a) === Array.isArray(b)) {
+        for (let i = 0; i < Math.min(sa.length, sb.length); i++) {
+          if (!pyEq(sa[i], sb[i])) return this.cmp(sa[i], sb[i], line, op);
+        }
+        return Math.sign(sa.length - sb.length);
+      }
+      throw new PyError('TypeError', `'${op}' not supported between instances of '${typeName(a)}' and '${typeName(b)}'`, line);
+    }
+    compare(op, a, b, line) {
+      switch (op) {
+        case '==': return pyEq(a, b);
+        case '!=': return !pyEq(a, b);
+        case '<': return this.cmp(a, b, line, op) < 0;
+        case '>': return this.cmp(a, b, line, op) > 0;
+        case '<=': return this.cmp(a, b, line, op) <= 0;
+        case '>=': return this.cmp(a, b, line, op) >= 0;
+        case 'is': return a === b || (a === null && b === null);
+        case 'is not': return !(a === b);
+        case 'in': case 'not in': {
+          let found;
+          if (typeof b === 'string') {
+            if (typeof a !== 'string') throw new PyError('TypeError', `'in <string>' requires string as left operand, not ${typeName(a)}`, line);
+            found = b.includes(a);
+          } else if (Array.isArray(b) || b instanceof PyTuple) {
+            found = (Array.isArray(b) ? b : b.items).some(x => pyEq(x, a));
+          } else {
+            throw new PyError('TypeError', `argument of type '${typeName(b)}' is not iterable`, line);
+          }
+          return op === 'in' ? found : !found;
+        }
+      }
+      throw new PyError('SyntaxError', `unsupported comparison ${op}`, line);
+    }
+    installBuiltins() {
+      const def = (name, fn) => this.builtins.vars.set(name, new PyBuiltin(name, fn));
+      const arity = (name, args, lo, hi, line) => {
+        if (args.length < lo || args.length > hi) {
+          throw new PyError('TypeError', `${name}() takes ${lo === hi ? lo : `${lo} to ${hi}`} argument${hi === 1 ? '' : 's'} (${args.length} given)`, line);
+        }
+      };
+      def('len', (args, line) => {
+        arity('len', args, 1, 1, line);
+        const v = args[0];
+        if (Array.isArray(v) || typeof v === 'string') return v.length;
+        if (v instanceof PyTuple) return v.items.length;
+        throw new PyError('TypeError', `object of type '${typeName(v)}' has no len()`, line);
+      });
+      def('sum', (args, line) => {
+        arity('sum', args, 1, 2, line);
+        return this.iterate(args[0], line).reduce((acc, x) => this.binop('+', acc, x, line), args.length > 1 ? args[1] : 0);
+      });
+      const extreme = (name, sign) => (args, line) => {
+        const items = args.length === 1 ? this.iterate(args[0], line) : args;
+        if (!items.length) throw new PyError('ValueError', `${name}() arg is an empty sequence`, line);
+        return items.reduce((best, x) => (this.cmp(x, best, line) * sign > 0 ? x : best));
+      };
+      def('max', extreme('max', 1));
+      def('min', extreme('min', -1));
+      def('abs', (args, line) => {
+        arity('abs', args, 1, 1, line);
+        const v = args[0];
+        if (!isNum(v)) throw new PyError('TypeError', `bad operand type for abs(): '${typeName(v)}'`, line);
+        return v instanceof PyFloat ? new PyFloat(Math.abs(v.v)) : Math.abs(numVal(v));
+      });
+      def('range', (args, line) => {
+        arity('range', args, 1, 3, line);
+        args.forEach(a => { if (!isNum(a) || a instanceof PyFloat) throw new PyError('TypeError', `'${typeName(a)}' object cannot be interpreted as an integer`, line); });
+        const [lo, hi, step] = args.length === 1 ? [0, numVal(args[0]), 1] : [numVal(args[0]), numVal(args[1]), args.length === 3 ? numVal(args[2]) : 1];
+        if (step === 0) throw new PyError('ValueError', 'range() arg 3 must not be zero', line);
+        const out = [];
+        for (let k = lo; step > 0 ? k < hi : k > hi; k += step) {
+          out.push(k);
+          if (out.length > 100000) throw new PyError('LimitError', 'this range is too long for the prototype', line);
+        }
+        return out;
+      });
+      def('print', (args) => { this.output.push(args.map(pyStr).join(' ')); return null; });
+      def('list', (args, line) => { arity('list', args, 0, 1, line); return args.length ? this.iterate(args[0], line) : []; });
+      def('tuple', (args, line) => { arity('tuple', args, 0, 1, line); return new PyTuple(args.length ? this.iterate(args[0], line) : []); });
+      def('str', (args, line) => { arity('str', args, 0, 1, line); return args.length ? pyStr(args[0]) : ''; });
+      def('int', (args, line) => {
+        arity('int', args, 0, 1, line);
+        if (!args.length) return 0;
+        const v = args[0];
+        if (isNum(v)) return Math.trunc(numVal(v));
+        if (typeof v === 'string' && /^\s*[+-]?\d+\s*$/.test(v)) return parseInt(v, 10);
+        throw new PyError('ValueError', `invalid literal for int(): ${repr(v)}`, line);
+      });
+      def('bool', (args, line) => { arity('bool', args, 0, 1, line); return args.length ? truthy(args[0]) : false; });
+      def('sorted', (args, line) => {
+        arity('sorted', args, 1, 1, line);
+        return this.iterate(args[0], line).sort((a, b) => this.cmp(a, b, line));
+      });
+      def('reversed', (args, line) => { arity('reversed', args, 1, 1, line); return this.iterate(args[0], line).reverse(); });
+    }
+  }
+
+  function errInfo(e) {
+    if (e instanceof PyError) return { type: e.pyType, message: e.message, line: e.line };
+    if (e instanceof RangeError) {
+      return { type: 'RecursionError', message: 'maximum recursion depth exceeded. Check that every call gets closer to a base case.', line: null };
+    }
+    return { type: 'Error', message: String(e && e.message || e), line: null };
+  }
+
+  // Runs the code, then the call, recording every call to a function the code
+  // defines. Returns the calls as a list of nodes (children by id).
+  function run(code, callText, opts = {}) {
+    const it = new Interp(code, opts);
+    let program;
+    try {
+      program = new Parser(tokenize(code)).program();
+      it.execBlock(program, it.globals);
+    } catch (e) {
+      return { ok: false, where: 'code', error: errInfo(e), nodes: [], output: it.output, lines: it.lines };
+    }
+    let callExpr;
+    try {
+      const p = new Parser(tokenize(String(callText).trim()));
+      if (p.at('EOF')) throw new PyError('SyntaxError', 'type a call to run, like sum_list([1, 2, 3])', 1);
+      callExpr = p.testList();
+      p.eat('NEWLINE');
+      if (!p.at('EOF')) throw new PyError('SyntaxError', 'the call should be one expression, like sum_list([1, 2, 3])', 1);
+    } catch (e) {
+      return { ok: false, where: 'call', error: errInfo(e), nodes: [], output: it.output, lines: it.lines };
+    }
+    it.tracing = true;
+    let value = null, error = null;
+    try {
+      value = it.eval(callExpr, it.globals);
+    } catch (e) {
+      error = errInfo(e);
+    }
+    it.tracing = false;
+    const failed = it.nodes.find(n => n.error && !n.children.some(c => it.nodes[c].error));
+    return {
+      ok: !error,
+      where: error ? (failed ? 'code' : 'call') : null,
+      error,
+      failedNode: failed ? failed.id : null,
+      value,
+      valueRepr: error ? null : repr(value),
+      nodes: it.nodes,
+      output: it.output,
+      lines: it.lines,
+    };
+  }
+
+  // Reads a prediction the student typed, as a Python value.
+  function parsePrediction(text) {
+    const p = new Parser(tokenize(String(text).trim()));
+    if (p.at('EOF')) throw new PyError('SyntaxError', 'empty', 1);
+    const e = p.testList();
+    p.eat('NEWLINE');
+    if (!p.at('EOF')) throw new PyError('SyntaxError', 'extra text', 1);
+    const it = new Interp('', { maxSteps: 20000 });
+    return it.eval(e, it.globals);
+  }
+
+  function checkPrediction(text, actual) {
+    try {
+      return { ok: true, match: pyEq(parsePrediction(text), actual, true) };
+    } catch (e) {
+      return { ok: false };
+    }
+  }
+
+  return { run, checkPrediction, repr, typeName, PyError };
+})();
+
+if (typeof module !== 'undefined') module.exports = PyMini;
+
+</script>
+<script>
+// A small Gleam interpreter for the Recursion Practicer. It runs the part of
+// Gleam that recursion practice uses (functions, case with patterns, guards
+// and alternatives, let, blocks, lists, tuples, custom types, pipes, captures,
+// anonymous functions, and some gleam/list, gleam/int, gleam/float,
+// gleam/string, gleam/bool and gleam/io functions). It records every call to a
+// named function: its arguments, which case patterns matched and what they
+// bound, its result, where in the source the call was made, and the calls it
+// made. Types aren't checked ahead of time, so a type mistake shows up as an
+// error when the code runs. It needs no eval and no network.
+const GleamMini = (() => {
+  class GleamError extends Error {
+    constructor(type, message, pos, src) {
+      super(message);
+      this.gType = type;
+      this.pos = pos ?? null; // offset into the source it came from
+      this.src = src ?? null; // 'code', 'call' or 'value'
+    }
+  }
+  class GFloat { constructor(v) { this.v = v; } }
+  class GTuple { constructor(items) { this.items = items; } }
+  class GCtor {
+    constructor(name, labels) {
+      this.name = name;
+      this.labels = labels; // one entry per field: its label, or null
+      this.arity = labels.length;
+      this.singleton = this.arity === 0 ? new GRecord(this, []) : null;
+    }
+  }
+  class GRecord { constructor(ctor, values) { this.ctor = ctor; this.values = values; } }
+  class GFunction {
+    constructor(name, params, body, env, isAnon) { Object.assign(this, { name, params, body, env, isAnon }); }
+  }
+  class GBuiltin { constructor(name, labels, fn) { this.name = name; this.labels = labels; this.fn = fn; } }
+  class GNil {}
+  const NIL = new GNil();
+
+  // ── Values ──────────────────────────────────────────────────────────────────
+
+  function floatRepr(x) {
+    if (Object.is(x, -0)) x = 0;
+    let s = String(x);
+    if (s.includes('e')) {
+      let [m, e] = s.split('e');
+      if (!m.includes('.')) m += '.0';
+      return `${m}e${e.replace('+', '')}`;
+    }
+    return s.includes('.') ? s : `${s}.0`;
+  }
+
+  function strRepr(s) {
+    return '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t') + '"';
+  }
+
+  function repr(v) {
+    if (typeof v === 'number') return String(Object.is(v, -0) ? 0 : v);
+    if (v instanceof GFloat) return floatRepr(v.v);
+    if (typeof v === 'string') return strRepr(v);
+    if (v === true) return 'True';
+    if (v === false) return 'False';
+    if (v === NIL) return 'Nil';
+    if (Array.isArray(v)) return `[${v.map(repr).join(', ')}]`;
+    if (v instanceof GTuple) return `#(${v.items.map(repr).join(', ')})`;
+    if (v instanceof GRecord) {
+      if (!v.values.length) return v.ctor.name;
+      return `${v.ctor.name}(${v.values.map((x, i) => (v.ctor.labels[i] ? `${v.ctor.labels[i]}: ` : '') + repr(x)).join(', ')})`;
+    }
+    if (v instanceof GFunction) return `//fn(${v.params.map((p) => p.name).join(', ')}) { ... }`;
+    if (v instanceof GBuiltin || v instanceof GCtor) return '//fn(...) { ... }';
+    return String(v);
+  }
+
+  function typeName(v) {
+    if (typeof v === 'number') return 'Int';
+    if (v instanceof GFloat) return 'Float';
+    if (typeof v === 'string') return 'String';
+    if (typeof v === 'boolean') return 'Bool';
+    if (v === NIL) return 'Nil';
+    if (Array.isArray(v)) return 'List';
+    if (v instanceof GTuple) return 'Tuple';
+    if (v instanceof GRecord) return v.ctor.name;
+    return 'function';
+  }
+
+  function eq(a, b) {
+    if (a === b) return true;
+    if (typeof a === 'number' || typeof b === 'number') return false;
+    if (a instanceof GFloat && b instanceof GFloat) return a.v === b.v;
+    if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((x, i) => eq(x, b[i]));
+    if (a instanceof GTuple && b instanceof GTuple) {
+      return a.items.length === b.items.length && a.items.every((x, i) => eq(x, b.items[i]));
+    }
+    if (a instanceof GRecord && b instanceof GRecord) {
+      return a.ctor.name === b.ctor.name && a.values.length === b.values.length && a.values.every((x, i) => eq(x, b.values[i]));
+    }
+    return false;
+  }
+
+  // ── Lexer ───────────────────────────────────────────────────────────────────
+
+  const KEYWORDS = new Set(['as', 'assert', 'case', 'const', 'echo', 'fn', 'if', 'import', 'let', 'opaque', 'panic', 'pub', 'todo', 'type', 'use']);
+  const OPS = ['<=.', '>=.', '<>', '<=', '>=', '<.', '>.', '==', '!=', '&&', '||', '|>', '->', '<-', '..', '+.', '-.', '*.', '/.',
+    '+', '-', '*', '/', '%', '<', '>', '=', '!', '|', '(', ')', '[', ']', '{', '}', ',', ':', '.', '#', '@'];
+  const ESCAPES = { n: '\n', t: '\t', r: '\r', f: '\f', '"': '"', '\\': '\\' };
+
+  function tokenize(src, tag) {
+    const toks = [];
+    const n = src.length;
+    const fail = (msg, pos) => { throw new GleamError('SyntaxError', msg, pos, tag); };
+    let i = 0;
+    while (i < n) {
+      const c = src[i];
+      if (c === ' ' || c === '\t' || c === '\n' || c === '\r') { i++; continue; }
+      if (c === '/' && src[i + 1] === '/') { while (i < n && src[i] !== '\n') i++; continue; }
+      const s = i;
+      if (c >= '0' && c <= '9') {
+        if (c === '0' && /[xbo]/i.test(src[i + 1] || '')) {
+          const base = { x: 16, b: 2, o: 8 }[src[i + 1].toLowerCase()];
+          i += 2;
+          const ds = i;
+          while (i < n && /[0-9a-fA-F_]/.test(src[i])) i++;
+          const digits = src.slice(ds, i).replace(/_/g, '');
+          const v = parseInt(digits, base);
+          if (!digits || Number.isNaN(v)) fail('this number isn\'t written correctly', s);
+          toks.push({ t: 'Int', v, s, e: i });
+          continue;
+        }
+        while (i < n && /[0-9_]/.test(src[i])) i++;
+        let isFloat = false;
+        if (src[i] === '.' && /[0-9]/.test(src[i + 1] || '')) {
+          isFloat = true;
+          i++;
+          while (i < n && /[0-9_]/.test(src[i])) i++;
+          if (src[i] === 'e' && /[0-9-]/.test(src[i + 1] || '')) {
+            i++;
+            if (src[i] === '-') i++;
+            while (i < n && /[0-9]/.test(src[i])) i++;
+          }
+        }
+        const text = src.slice(s, i).replace(/_/g, '');
+        toks.push(isFloat ? { t: 'Float', v: parseFloat(text), s, e: i } : { t: 'Int', v: parseInt(text, 10), s, e: i });
+        continue;
+      }
+      if (/[a-z_]/.test(c)) {
+        while (i < n && /[A-Za-z0-9_]/.test(src[i])) i++;
+        const w = src.slice(s, i);
+        if (KEYWORDS.has(w)) toks.push({ t: 'kw', v: w, s, e: i });
+        else toks.push({ t: w[0] === '_' ? 'Discard' : 'Name', v: w, s, e: i });
+        continue;
+      }
+      if (/[A-Z]/.test(c)) {
+        while (i < n && /[A-Za-z0-9_]/.test(src[i])) i++;
+        toks.push({ t: 'UpName', v: src.slice(s, i), s, e: i });
+        continue;
+      }
+      if (c === '"') {
+        i++;
+        let out = '';
+        for (;;) {
+          if (i >= n) fail('this string is missing its closing "', s);
+          const ch = src[i];
+          if (ch === '"') { i++; break; }
+          if (ch === '\\') {
+            const nx = src[i + 1];
+            if (nx === 'u' && src[i + 2] === '{') {
+              const close = src.indexOf('}', i + 3);
+              const cp = close < 0 ? NaN : parseInt(src.slice(i + 3, close), 16);
+              if (Number.isNaN(cp)) fail('this \\u{...} escape isn\'t written correctly', i);
+              out += String.fromCodePoint(cp);
+              i = close + 1;
+              continue;
+            }
+            if (!(nx in ESCAPES)) fail(`\\${nx || ''} isn't an escape Gleam knows`, i);
+            out += ESCAPES[nx];
+            i += 2;
+            continue;
+          }
+          out += ch;
+          i++;
+        }
+        toks.push({ t: 'String', v: out, s, e: i });
+        continue;
+      }
+      const op = OPS.find((o) => src.startsWith(o, i));
+      if (op) { toks.push({ t: 'op', v: op, s, e: i + op.length }); i += op.length; continue; }
+      fail(`unexpected character ${JSON.stringify(c)}`, s);
+    }
+    toks.push({ t: 'EOF', v: '', s: n, e: n });
+    return toks;
+  }
+
+  // ── Parser ──────────────────────────────────────────────────────────────────
+
+  const BIN_PREC = {
+    '||': 1, '&&': 2, '==': 3, '!=': 3,
+    '<': 4, '<=': 4, '>': 4, '>=': 4, '<.': 4, '<=.': 4, '>.': 4, '>=.': 4,
+    '<>': 5, '|>': 6, '+': 7, '-': 7, '+.': 7, '-.': 7, '*': 8, '/': 8, '%': 8, '*.': 8, '/.': 8,
+  };
+
+  class Parser {
+    constructor(src, tag) {
+      this.src = src;
+      this.tag = tag;
+      this.toks = tokenize(src, tag);
+      this.i = 0;
+    }
+    peek(k = 0) { return this.toks[Math.min(this.i + k, this.toks.length - 1)]; }
+    at(t, v) { const k = this.peek(); return k.t === t && (v === undefined || k.v === v); }
+    atOp(v) { return this.at('op', v); }
+    atKw(v) { return this.at('kw', v); }
+    next() { return this.toks[this.i++]; }
+    found(tok = this.peek()) { return tok.t === 'EOF' ? 'the end of the code' : `\`${this.src.slice(tok.s, tok.e)}\``; }
+    fail(msg, tok = this.peek()) { throw new GleamError('SyntaxError', msg, tok.s, this.tag); }
+    expectOp(v, why) {
+      if (!this.atOp(v)) this.fail(`expected \`${v}\`${why ? ` ${why}` : ''}, but found ${this.found()}`);
+      return this.next();
+    }
+    expect(t, what) {
+      if (!this.at(t)) this.fail(`expected ${what}, but found ${this.found()}`);
+      return this.next();
+    }
+    node(k, s, e, extra) { return Object.assign({ k, s, e, src: this.tag }, extra); }
+    // Runs fn for each comma-separated item until the closing token.
+    commaList(close, fn) {
+      const out = [];
+      while (!this.atOp(close)) {
+        if (this.at('EOF')) this.fail(`expected \`${close}\`, but found the end of the code`);
+        out.push(fn());
+        if (!this.atOp(',')) break;
+        this.next();
+      }
+      return out;
+    }
+
+    module() {
+      const items = [];
+      while (!this.at('EOF')) {
+        if (this.atOp('@')) this.fail('attributes like @external aren\'t supported in this prototype');
+        if (this.atKw('pub')) this.next();
+        if (this.atKw('import')) items.push(this.importDecl());
+        else if (this.atKw('fn')) items.push(this.fnDecl());
+        else if (this.atKw('type') || this.atKw('opaque')) { const t = this.typeDecl(); if (t) items.push(t); }
+        else if (this.atKw('const')) items.push(this.constDecl());
+        else this.fail(`expected a function, a type, a const or an import, but found ${this.found()}`);
+      }
+      return items;
+    }
+    importDecl() {
+      const start = this.next();
+      const parts = [this.expect('Name', 'a module name, like gleam/list').v];
+      while (this.atOp('/')) { this.next(); parts.push(this.expect('Name', 'a module name').v); }
+      const unqualified = [];
+      if (this.atOp('.')) {
+        this.next();
+        this.expectOp('{');
+        unqualified.push(...this.commaList('}', () => {
+          let isType = false;
+          if (this.atKw('type')) { this.next(); isType = true; }
+          if (!this.at('Name') && !this.at('UpName')) this.fail(`expected a name to import, but found ${this.found()}`);
+          const name = this.next().v;
+          let alias = name;
+          if (this.atKw('as')) { this.next(); alias = this.next().v; }
+          return { name, alias, isType };
+        }));
+        this.expectOp('}');
+      }
+      let alias = parts[parts.length - 1];
+      if (this.atKw('as')) { this.next(); alias = this.expect('Name', 'a name for the module').v; }
+      return { k: 'Import', path: parts.join('/'), alias, unqualified, s: start.s };
+    }
+    typeDecl() {
+      if (this.atKw('opaque')) this.next();
+      if (!this.atKw('type')) this.fail(`expected \`type\`, but found ${this.found()}`);
+      this.next();
+      const name = this.expect('UpName', 'a type name, like Tree').v;
+      if (this.atOp('(')) { this.next(); this.commaList(')', () => this.expect('Name', 'a type parameter')); this.expectOp(')'); }
+      if (this.atOp('=')) { this.next(); this.type(); return null; }
+      this.expectOp('{', 'to start the type\'s constructors');
+      const ctors = [];
+      while (!this.atOp('}')) {
+        if (this.at('EOF')) this.fail('this type is missing its closing }');
+        if (this.atOp('@')) this.fail('attributes aren\'t supported in this prototype');
+        const cname = this.expect('UpName', 'a constructor name, like Leaf').v;
+        const labels = [];
+        if (this.atOp('(')) {
+          this.next();
+          labels.push(...this.commaList(')', () => {
+            let label = null;
+            if (this.at('Name') && this.peek(1).t === 'op' && this.peek(1).v === ':') { label = this.next().v; this.next(); }
+            this.type();
+            return label;
+          }));
+          this.expectOp(')');
+        }
+        ctors.push({ name: cname, labels });
+      }
+      this.next();
+      return { k: 'Type', name, ctors };
+    }
+    type() {
+      if (this.atKw('fn')) {
+        this.next();
+        this.expectOp('(');
+        this.commaList(')', () => this.type());
+        this.expectOp(')');
+        this.expectOp('->');
+        this.type();
+        return;
+      }
+      if (this.atOp('#')) { this.next(); this.expectOp('('); this.commaList(')', () => this.type()); this.expectOp(')'); return; }
+      if (this.at('Name')) {
+        this.next();
+        if (this.atOp('.')) { this.next(); this.expect('UpName', 'a type name'); this.typeArgs(); }
+        return;
+      }
+      if (this.at('UpName')) { this.next(); this.typeArgs(); return; }
+      if (this.at('Discard')) { this.next(); return; }
+      this.fail(`expected a type, like Int or List(Int), but found ${this.found()}`);
+    }
+    typeArgs() {
+      if (!this.atOp('(')) return;
+      this.next();
+      this.commaList(')', () => this.type());
+      this.expectOp(')');
+    }
+    constDecl() {
+      this.next();
+      const name = this.expect('Name', 'a name for the constant');
+      if (this.atOp(':')) { this.next(); this.type(); }
+      this.expectOp('=');
+      return { k: 'Const', name: name.v, value: this.expr() };
+    }
+    fnDecl() {
+      const start = this.next();
+      const name = this.expect('Name', 'a function name');
+      const params = this.params();
+      if (this.atOp('->')) { this.next(); this.type(); }
+      const open = this.expectOp('{', 'to start the function body');
+      const body = this.blockBody(open);
+      return { k: 'Fn', name: name.v, params, body: body.stmts, s: start.s };
+    }
+    params() {
+      this.expectOp('(');
+      const ps = this.commaList(')', () => {
+        let tok = this.next();
+        if (tok.t !== 'Name' && tok.t !== 'Discard') this.fail(`expected a parameter name, but found ${this.found(tok)}`, tok);
+        let label = null;
+        if (tok.t === 'Name' && (this.at('Name') || this.at('Discard'))) { label = tok.v; tok = this.next(); }
+        if (this.atOp(':')) { this.next(); this.type(); }
+        return { label, name: tok.v };
+      });
+      this.expectOp(')');
+      return ps;
+    }
+    blockBody(open) {
+      const stmts = [];
+      while (!this.atOp('}')) {
+        if (this.at('EOF')) this.fail('this { is never closed with }', open);
+        stmts.push(this.statement());
+      }
+      const close = this.next();
+      return { stmts, e: close.e };
+    }
+    statement() {
+      if (this.atKw('let')) {
+        const t = this.next();
+        let assert = false;
+        if (this.atKw('assert')) { this.next(); assert = true; }
+        const pattern = this.pattern();
+        if (this.atOp(':')) { this.next(); this.type(); }
+        this.expectOp('=', 'after the pattern in let');
+        const value = this.expr();
+        let message = null;
+        if (this.atKw('as')) { this.next(); message = this.expr(); }
+        return this.node('Let', t.s, (message || value).e, { pattern, value, assert, message });
+      }
+      if (this.atKw('assert')) {
+        const t = this.next();
+        const x = this.expr();
+        let message = null;
+        if (this.atKw('as')) { this.next(); message = this.expr(); }
+        return this.node('Assert', t.s, (message || x).e, { x, message });
+      }
+      if (this.atKw('use')) this.fail('use isn\'t supported in this prototype');
+      return this.expr();
+    }
+
+    expr() { return this.binary(1); }
+    binary(min) {
+      let left = this.unary();
+      for (;;) {
+        const t = this.peek();
+        const prec = t.t === 'op' ? BIN_PREC[t.v] : undefined;
+        if (!prec || prec < min) return left;
+        this.next();
+        const right = this.binary(prec + 1);
+        left = this.node(t.v === '|>' ? 'Pipe' : 'Bin', left.s, right.e, { op: t.v, left, right });
+      }
+    }
+    startsExpr() {
+      const t = this.peek();
+      if (['Int', 'Float', 'String', 'Name', 'UpName', 'Discard'].includes(t.t)) return true;
+      if (t.t === 'kw') return ['fn', 'case', 'todo', 'panic', 'echo'].includes(t.v);
+      if (t.t === 'op') return ['[', '#', '{', '-', '!'].includes(t.v);
+      return false;
+    }
+    sameLine(a, b) { return !this.src.slice(a, b).includes('\n'); }
+    unary() {
+      if (this.atOp('!')) { const t = this.next(); const x = this.unary(); return this.node('Not', t.s, x.e, { x }); }
+      if (this.atOp('-')) { const t = this.next(); const x = this.unary(); return this.node('Neg', t.s, x.e, { x }); }
+      if (this.atKw('echo')) {
+        const t = this.next();
+        if (!this.startsExpr() || !this.sameLine(t.e, this.peek().s)) return this.node('EchoFn', t.s, t.e, {});
+        const x = this.binary(1);
+        return this.node('Echo', t.s, x.e, { x });
+      }
+      return this.postfix(this.primary());
+    }
+    postfix(e) {
+      for (;;) {
+        if (this.atOp('(') && this.peek(1).t === 'op' && this.peek(1).v === '..') {
+          // Record update: Person(..p, age: 3)
+          this.next();
+          this.next();
+          const base = this.expr();
+          const fields = [];
+          while (this.atOp(',')) {
+            this.next();
+            if (this.atOp(')')) break;
+            const lt = this.expect('Name', 'a field label, like age: 3');
+            this.expectOp(':', 'after the field label');
+            fields.push({ label: lt.v, value: this.expr() });
+          }
+          const close = this.expectOp(')', 'to close the record update');
+          e = this.node('Update', e.s, close.e, { ctor: e, base, fields });
+          continue;
+        }
+        if (this.atOp('(')) {
+          this.next();
+          const args = this.commaList(')', () => {
+            let label = null;
+            if (this.at('Name') && this.peek(1).t === 'op' && this.peek(1).v === ':') {
+              const lt = this.next();
+              this.next();
+              label = lt.v;
+              if (this.atOp(',') || this.atOp(')')) return { label, value: this.node('Var', lt.s, lt.e, { name: lt.v }) };
+            }
+            if (this.at('Discard', '_') && (this.peek(1).v === ',' || this.peek(1).v === ')')) {
+              const h = this.next();
+              return { label, value: this.node('Hole', h.s, h.e, {}) };
+            }
+            return { label, value: this.expr() };
+          });
+          const close = this.expectOp(')', 'to close the call');
+          e = this.node('Call', e.s, close.e, { fn: e, args });
+          continue;
+        }
+        if (this.atOp('.')) {
+          this.next();
+          const t = this.next();
+          if (t.t === 'Name' || t.t === 'UpName') { e = this.node('Access', e.s, t.e, { obj: e, name: t.v }); continue; }
+          if (t.t === 'Int') { e = this.node('TupleIndex', e.s, t.e, { obj: e, index: t.v }); continue; }
+          this.fail(`expected a name after the dot, but found ${this.found(t)}`, t);
+        }
+        return e;
+      }
+    }
+    primary() {
+      const t = this.peek();
+      switch (t.t) {
+        case 'Int': this.next(); return this.node('Int', t.s, t.e, { v: t.v });
+        case 'Float': this.next(); return this.node('Float', t.s, t.e, { v: t.v });
+        case 'String': this.next(); return this.node('Str', t.s, t.e, { v: t.v });
+        case 'Name': this.next(); return this.node('Var', t.s, t.e, { name: t.v });
+        case 'UpName': this.next(); return this.node('Ctor', t.s, t.e, { name: t.v });
+        case 'Discard': this.next(); return this.node('Hole', t.s, t.e, {});
+        case 'kw':
+          if (t.v === 'fn') return this.anonFn();
+          if (t.v === 'case') return this.caseExpr();
+          if (t.v === 'todo' || t.v === 'panic') {
+            this.next();
+            let message = null;
+            if (this.atKw('as')) { this.next(); message = this.expr(); }
+            return this.node(t.v === 'todo' ? 'Todo' : 'Panic', t.s, (message || t).e, { message });
+          }
+          if (t.v === 'let') this.fail('let can only go inside a function body or a { } block');
+          break;
+        case 'op':
+          if (t.v === '[') return this.listExpr();
+          if (t.v === '#') {
+            this.next();
+            this.expectOp('(', 'after # to start a tuple');
+            const items = this.commaList(')', () => this.expr());
+            const close = this.expectOp(')', 'to close the tuple');
+            return this.node('Tuple', t.s, close.e, { items });
+          }
+          if (t.v === '{') {
+            this.next();
+            const { stmts, e } = this.blockBody(t);
+            if (!stmts.length) this.fail('this { } block is empty', t);
+            return this.node('Block', t.s, e, { stmts });
+          }
+          if (t.v === '(') this.fail('Gleam groups with { } instead of ( ), like { a + b } * c');
+          break;
+        default: break;
+      }
+      this.fail(`expected an expression, but found ${this.found()}`);
+      return null;
+    }
+    listExpr() {
+      const open = this.next();
+      const items = [];
+      let tail = null;
+      while (!this.atOp(']')) {
+        if (this.at('EOF')) this.fail('this list is missing its closing ]', open);
+        if (this.atOp('..')) {
+          this.next();
+          tail = this.expr();
+          if (this.atOp(',')) this.next();
+          break;
+        }
+        items.push(this.expr());
+        if (!this.atOp(',')) break;
+        this.next();
+      }
+      const close = this.expectOp(']', 'to close the list');
+      return this.node('List', open.s, close.e, { items, tail });
+    }
+    anonFn() {
+      const t = this.next();
+      const params = this.params();
+      if (this.atOp('->')) { this.next(); this.type(); }
+      const open = this.expectOp('{', 'to start the function body');
+      const { stmts, e } = this.blockBody(open);
+      return this.node('Fn', t.s, e, { params, body: stmts });
+    }
+    caseExpr() {
+      const t = this.next();
+      const subjects = [this.expr()];
+      while (this.atOp(',')) { this.next(); subjects.push(this.expr()); }
+      const open = this.expectOp('{', 'to start the case clauses');
+      const clauses = [];
+      while (!this.atOp('}')) {
+        if (this.at('EOF')) this.fail('this case is missing its closing }', open);
+        const patS = this.peek().s;
+        const alts = [this.patternList(subjects.length)];
+        while (this.atOp('|')) { this.next(); alts.push(this.patternList(subjects.length)); }
+        let guard = null;
+        if (this.atKw('if')) { this.next(); guard = this.expr(); }
+        const patE = this.toks[this.i - 1].e;
+        this.expectOp('->', 'after the pattern');
+        const body = this.expr();
+        clauses.push({ alts, guard, body, patS, patE });
+      }
+      const close = this.next();
+      if (!clauses.length) this.fail('this case has no clauses', t);
+      return this.node('Case', t.s, close.e, { subjects, clauses });
+    }
+    patternList(count) {
+      const first = this.peek();
+      const ps = [this.pattern()];
+      while (this.atOp(',')) { this.next(); ps.push(this.pattern()); }
+      if (ps.length !== count) {
+        this.fail(`this case has ${count} subject${count === 1 ? '' : 's'}, so each pattern needs ${count} part${count === 1 ? '' : 's'} separated by commas`, first);
+      }
+      return ps;
+    }
+    pattern() {
+      let p = this.patternPrimary();
+      if (this.atKw('as')) { this.next(); p = { k: 'PAs', p, name: this.expect('Name', 'a name after as').v }; }
+      return p;
+    }
+    patternPrimary() {
+      const t = this.peek();
+      if (t.t === 'Discard') { this.next(); return { k: 'PDiscard' }; }
+      if (t.t === 'Name') {
+        this.next();
+        if (this.atOp('.')) { this.next(); return this.ctorPattern(this.expect('UpName', 'a constructor name')); }
+        return { k: 'PVar', name: t.v };
+      }
+      if (t.t === 'Int') { this.next(); return { k: 'PInt', v: t.v }; }
+      if (t.t === 'Float') { this.next(); return { k: 'PFloat', v: t.v }; }
+      if (t.t === 'op' && t.v === '-' && (this.peek(1).t === 'Int' || this.peek(1).t === 'Float')) {
+        this.next();
+        const nt = this.next();
+        return { k: nt.t === 'Int' ? 'PInt' : 'PFloat', v: -nt.v };
+      }
+      if (t.t === 'String') {
+        this.next();
+        if (this.atOp('<>')) {
+          this.next();
+          const r = this.next();
+          if (r.t !== 'Name' && r.t !== 'Discard') this.fail(`expected a name after <>, but found ${this.found(r)}`, r);
+          return { k: 'PStrPrefix', prefix: t.v, rest: r.t === 'Name' ? r.v : null };
+        }
+        return { k: 'PStr', v: t.v };
+      }
+      if (t.t === 'UpName') { this.next(); return this.ctorPattern(t); }
+      if (t.t === 'op' && t.v === '[') {
+        const open = this.next();
+        const items = [];
+        let hasTail = false;
+        let tail = null;
+        while (!this.atOp(']')) {
+          if (this.at('EOF')) this.fail('this list pattern is missing its closing ]', open);
+          if (this.atOp('..')) {
+            this.next();
+            hasTail = true;
+            if (this.at('Name')) tail = this.next().v;
+            else if (this.at('Discard')) this.next();
+            if (this.atOp(',')) this.next();
+            break;
+          }
+          items.push(this.pattern());
+          if (!this.atOp(',')) break;
+          this.next();
+        }
+        this.expectOp(']', 'to close the list pattern');
+        return { k: 'PList', items, hasTail, tail };
+      }
+      if (t.t === 'op' && t.v === '#') {
+        this.next();
+        this.expectOp('(', 'after # to start a tuple pattern');
+        const items = this.commaList(')', () => this.pattern());
+        this.expectOp(')', 'to close the tuple pattern');
+        return { k: 'PTuple', items };
+      }
+      this.fail(`expected a pattern, like [] or [first, ..rest], but found ${this.found()}`);
+      return null;
+    }
+    ctorPattern(t) {
+      const name = t.v;
+      if (name === 'True' || name === 'False') return { k: 'PBool', v: name === 'True' };
+      if (name === 'Nil') return { k: 'PNil' };
+      const args = [];
+      let spread = false;
+      if (this.atOp('(')) {
+        this.next();
+        while (!this.atOp(')')) {
+          if (this.at('EOF')) this.fail('this pattern is missing its closing )');
+          if (this.atOp('..')) { this.next(); spread = true; if (this.atOp(',')) this.next(); break; }
+          let label = null;
+          if (this.at('Name') && this.peek(1).t === 'op' && this.peek(1).v === ':') {
+            label = this.next().v;
+            this.next();
+            if (this.atOp(',') || this.atOp(')')) {
+              args.push({ label, p: { k: 'PVar', name: label } });
+              if (this.atOp(',')) this.next();
+              continue;
+            }
+          }
+          args.push({ label, p: this.pattern() });
+          if (!this.atOp(',')) break;
+          this.next();
+        }
+        this.expectOp(')', 'to close the pattern');
+      }
+      return { k: 'PCtor', name, args, spread, s: t.s };
+    }
+  }
+
+  // ── Interpreter ─────────────────────────────────────────────────────────────
+
+  class Env {
+    constructor(parent) { this.vars = new Map(); this.parent = parent; }
+    lookup(name) {
+      for (let e = this; e; e = e.parent) if (e.vars.has(name)) return e.vars.get(name);
+      return undefined;
+    }
+  }
+
+  const DEFAULT_MODULES = ['list', 'int', 'float', 'string', 'bool', 'io'];
+
+  class Interp {
+    constructor(src, opts = {}) {
+      this.src = src;
+      this.lines = src.split('\n');
+      this.callSrc = '';
+      this.output = [];
+      this.steps = 0;
+      this.maxSteps = opts.maxSteps ?? 2000000;
+      this.maxCalls = opts.maxCalls ?? 400;
+      this.maxDepth = opts.maxDepth ?? 200;
+      this.nodes = [];
+      this.stack = [];
+      this.tracing = false;
+      this.depth = 0;
+      this.anonDepth = 0;
+      this.ctors = new Map();
+      this.globals = new Env(null);
+      this.addCtor('Ok', [null]);
+      this.addCtor('Error', [null]);
+      this.modules = makeModules(this);
+      // Modules can be used without importing them; an import can rename one.
+      this.aliases = new Map(DEFAULT_MODULES.map((m) => [m, `gleam/${m}`]));
+    }
+    addCtor(name, labels) { this.ctors.set(name, new GCtor(name, labels)); }
+    err(type, message, at) { return new GleamError(type, message, at ? at.s : null, at ? at.src : null); }
+    tick(at) {
+      if (++this.steps > this.maxSteps) {
+        throw this.err('TimeoutError', 'the code ran for too long. Check for recursion that never stops.', at);
+      }
+    }
+    load(items) {
+      for (const it of items) if (it.k === 'Type') for (const c of it.ctors) this.addCtor(c.name, c.labels);
+      for (const it of items) if (it.k === 'Import') this.doImport(it);
+      for (const it of items) {
+        if (it.k === 'Fn') this.globals.vars.set(it.name, new GFunction(it.name, it.params, it.body, this.globals, false));
+      }
+      for (const it of items) if (it.k === 'Const') this.globals.vars.set(it.name, this.eval(it.value, this.globals));
+    }
+    doImport(it) {
+      const mod = this.modules.get(it.path);
+      if (!mod) {
+        throw new GleamError('ImportError', `${it.path} isn't available in this prototype. It has gleam/list, gleam/int, gleam/float, gleam/string, gleam/bool and gleam/io.`, it.s, 'code');
+      }
+      this.aliases.set(it.alias, it.path);
+      for (const u of it.unqualified) {
+        if (u.isType) continue;
+        const m = mod[u.name];
+        if (m === undefined) throw new GleamError('ImportError', `${it.path}.${u.name} isn't available in this prototype`, it.s, 'code');
+        this.globals.vars.set(u.alias, m);
+      }
+    }
+
+    evalBlock(stmts, env) {
+      if (!stmts.length) throw new GleamError('todo', 'this function body is empty, so it isn\'t written yet', null, null);
+      let value = NIL;
+      for (const s of stmts) {
+        if (s.k === 'Let') {
+          value = this.eval(s.value, env);
+          const b = new Map();
+          if (!this.match(s.pattern, value, b)) {
+            const msg = s.message ? this.eval(s.message, env) : null;
+            throw this.err('panic', typeof msg === 'string' ? msg : `let${s.assert ? ' assert' : ''} failed: ${repr(value)} doesn't match the pattern`, s);
+          }
+          env = new Env(env);
+          for (const [k, v] of b) env.vars.set(k, v);
+        } else if (s.k === 'Assert') {
+          const v = this.eval(s.x, env);
+          if (v !== true) {
+            const msg = s.message ? this.eval(s.message, env) : null;
+            throw this.err('panic', typeof msg === 'string' ? msg : 'assert failed: this was False', s);
+          }
+          value = NIL;
+        } else {
+          value = this.eval(s, env);
+        }
+      }
+      return value;
+    }
+
+    eval(e, env) {
+      this.tick(e);
+      switch (e.k) {
+        case 'Int': return e.v;
+        case 'Float': return new GFloat(e.v);
+        case 'Str': return e.v;
+        case 'Var': {
+          const v = env.lookup(e.name);
+          if (v !== undefined) return v;
+          if (this.aliases.has(e.name)) throw this.err('NameError', `${e.name} is a module. Use one of its functions, like ${e.name}.length(...)`, e);
+          throw this.err('NameError', `there's no variable called ${e.name}`, e);
+        }
+        case 'Ctor': {
+          if (e.name === 'True') return true;
+          if (e.name === 'False') return false;
+          if (e.name === 'Nil') return NIL;
+          const c = this.ctors.get(e.name);
+          if (!c) throw this.err('NameError', `there's no constructor called ${e.name}. Define it in a type first.`, e);
+          return c.arity === 0 ? c.singleton : c;
+        }
+        case 'List': {
+          const items = e.items.map((x) => this.eval(x, env));
+          if (!e.tail) return items;
+          const tail = this.eval(e.tail, env);
+          if (!Array.isArray(tail)) throw this.err('TypeError', `the part after .. has to be a List, but got ${repr(tail)}`, e.tail);
+          return items.concat(tail);
+        }
+        case 'Tuple': return new GTuple(e.items.map((x) => this.eval(x, env)));
+        case 'Block': return this.evalBlock(e.stmts, new Env(env));
+        case 'Fn': return new GFunction('fn', e.params, e.body, env, true);
+        case 'Case': return this.evalCase(e, env);
+        case 'Call': return this.evalCall(e, env, undefined, e);
+        case 'Pipe': return this.evalPipe(e, env);
+        case 'Bin': return this.binop(e, env);
+        case 'Not': {
+          const v = this.eval(e.x, env);
+          if (typeof v !== 'boolean') throw this.err('TypeError', `! works on Bools, but got ${repr(v)}`, e);
+          return !v;
+        }
+        case 'Neg': {
+          const v = this.eval(e.x, env);
+          if (typeof v === 'number') return v === 0 ? 0 : -v;
+          if (v instanceof GFloat) return new GFloat(-v.v);
+          throw this.err('TypeError', `- works on Ints and Floats, but got ${repr(v)}`, e);
+        }
+        case 'Access': return this.access(e, env);
+        case 'Update': {
+          const base = this.eval(e.base, env);
+          const name = e.ctor.k === 'Ctor' ? e.ctor.name : e.ctor.k === 'Access' ? e.ctor.name : null;
+          if (!(base instanceof GRecord) || base.ctor.name !== name) {
+            throw this.err('TypeError', `the record after .. has to be a ${name}, but got ${repr(base)}`, e);
+          }
+          const values = [...base.values];
+          for (const f of e.fields) {
+            const i = base.ctor.labels.indexOf(f.label);
+            if (i < 0) throw this.err('TypeError', `${name} has no field labelled ${f.label}`, e);
+            values[i] = this.eval(f.value, env);
+          }
+          return new GRecord(base.ctor, values);
+        }
+        case 'TupleIndex': {
+          const v = this.eval(e.obj, env);
+          if (!(v instanceof GTuple)) throw this.err('TypeError', `.${e.index} works on tuples, but got ${repr(v)}`, e);
+          if (e.index >= v.items.length) throw this.err('TypeError', `this tuple has no item ${e.index}`, e);
+          return v.items[e.index];
+        }
+        case 'Echo': {
+          const v = this.eval(e.x, env);
+          this.echo(v, e);
+          return v;
+        }
+        case 'EchoFn': return new GBuiltin('echo', [null], ([v]) => { this.echo(v, e); return v; });
+        case 'Todo':
+        case 'Panic': {
+          const msg = e.message ? this.eval(e.message, env) : null;
+          if (e.k === 'Todo') throw this.err('todo', typeof msg === 'string' ? msg : 'this part isn\'t written yet (todo)', e);
+          throw this.err('panic', typeof msg === 'string' ? msg : 'the code called panic', e);
+        }
+        case 'Hole': throw this.err('SyntaxError', '_ can only stand in for one argument of a call, like add(_, 1)', e);
+        default: throw this.err('SyntaxError', 'this isn\'t supported in this prototype', e);
+      }
+    }
+    echo(v, at) {
+      const where = at.src === 'code' ? `line ${this.lineOf(at.s)}` : 'echo';
+      this.output.push(`${where}: ${repr(v)}`);
+    }
+    lineOf(pos) { return this.src.slice(0, pos).split('\n').length; }
+    access(e, env) {
+      if (e.obj.k === 'Var' && env.lookup(e.obj.name) === undefined && this.aliases.has(e.obj.name)) {
+        const mod = this.modules.get(this.aliases.get(e.obj.name));
+        const m = mod[e.name];
+        if (m === undefined) throw this.err('NameError', `${e.obj.name}.${e.name} isn't available in this prototype`, e);
+        return m;
+      }
+      const v = this.eval(e.obj, env);
+      if (v instanceof GRecord) {
+        const i = v.ctor.labels.indexOf(e.name);
+        if (i >= 0) return v.values[i];
+      }
+      throw this.err('TypeError', `${repr(v)} has no field called ${e.name}`, e);
+    }
+    evalPipe(e, env) {
+      const left = this.eval(e.left, env);
+      const r = e.right;
+      if (r.k === 'Call') return this.evalCall(r, env, left, e);
+      if (r.k === 'EchoFn') { this.echo(left, r); return left; }
+      return this.callValue(this.eval(r, env), [{ label: null, value: left }], e);
+    }
+    evalCall(e, env, piped, site) {
+      const holes = e.args.filter((a) => a.value.k === 'Hole').length;
+      if (holes > 1) throw this.err('SyntaxError', 'a function capture can have only one _', e);
+      if (holes === 1 && piped === undefined) {
+        // A capture: add(_, 1) is fn(x) { add(x, 1) }
+        const f = this.eval(e.fn, env);
+        const fixed = e.args.map((a) => (a.value.k === 'Hole' ? null : this.eval(a.value, env)));
+        return new GBuiltin('fn', [null], ([x]) => this.callValue(f, e.args.map((a, i) => ({ label: a.label, value: a.value.k === 'Hole' ? x : fixed[i] })), e));
+      }
+      const f = this.eval(e.fn, env);
+      let args = e.args.map((a) => ({ label: a.label, value: a.value.k === 'Hole' ? piped : this.eval(a.value, env) }));
+      if (piped !== undefined && holes === 0) args = [{ label: null, value: piped }, ...args];
+      return this.callValue(f, args, site);
+    }
+    bindArgs(labels, name, args, site) {
+      const n = labels.length;
+      const out = new Array(n);
+      const filled = new Array(n).fill(false);
+      const count = `${name} takes ${n} argument${n === 1 ? '' : 's'}, but got ${args.length}`;
+      if (args.length !== n) throw this.err('TypeError', count, site);
+      let pos = 0;
+      for (const a of args) {
+        if (a.label) {
+          const i = labels.indexOf(a.label);
+          if (i < 0) throw this.err('TypeError', `${name} has no argument labelled ${a.label}`, site);
+          if (filled[i]) throw this.err('TypeError', `${name} got two values for ${a.label}`, site);
+          out[i] = a.value;
+          filled[i] = true;
+        } else {
+          while (pos < n && filled[pos]) pos++;
+          if (pos >= n) throw this.err('TypeError', count, site);
+          out[pos] = a.value;
+          filled[pos] = true;
+          pos++;
+        }
+      }
+      return out;
+    }
+    callValue(f, args, site) {
+      if (f instanceof GCtor) return new GRecord(f, this.bindArgs(f.labels, f.name, args, site));
+      if (f instanceof GBuiltin) return f.fn(this.bindArgs(f.labels, f.name, args, site), site);
+      if (!(f instanceof GFunction)) throw this.err('TypeError', `${repr(f)} isn't a function, so it can't be called`, site);
+      const vals = this.bindArgs(f.params.map((p) => p.label), f.isAnon ? 'this function' : f.name, args, site);
+      const frame = new Env(f.env);
+      f.params.forEach((p, i) => { if (!p.name.startsWith('_')) frame.vars.set(p.name, vals[i]); });
+      let node = null;
+      if (this.tracing && !f.isAnon) {
+        if (this.nodes.length >= this.maxCalls) {
+          throw this.err('LimitError', `this makes more than ${this.maxCalls} calls, which is too many to practice on. Try a smaller input.`, site);
+        }
+        const parent = this.stack.length ? this.stack[this.stack.length - 1] : null;
+        node = {
+          id: this.nodes.length,
+          name: f.name,
+          params: f.params.map((p) => p.name),
+          args: vals.map(repr),
+          parent: parent ? parent.id : null,
+          children: [],
+          depth: this.stack.length,
+          result: undefined,
+          resultRepr: null,
+          error: null,
+          callS: site.s,
+          callE: site.e,
+          callSrc: site.src,
+          matches: [],
+          anonBase: this.anonDepth,
+        };
+        this.nodes.push(node);
+        if (parent) parent.children.push(node.id);
+        this.stack.push(node);
+      }
+      if (++this.depth > this.maxDepth) {
+        this.depth--;
+        if (node) this.stack.pop();
+        const err = this.err('RecursionError', `more than ${this.maxDepth} calls are waiting on each other. Check that every call gets closer to a base case.`, site);
+        if (node) node.error = err;
+        throw err;
+      }
+      if (f.isAnon) this.anonDepth++;
+      try {
+        const v = this.evalBlock(f.body, frame);
+        if (node) { node.result = v; node.resultRepr = repr(v); }
+        return v;
+      } catch (err) {
+        if (node && !node.error) node.error = err;
+        throw err;
+      } finally {
+        this.depth--;
+        if (f.isAnon) this.anonDepth--;
+        if (node) this.stack.pop();
+      }
+    }
+    evalCase(e, env) {
+      const subjects = e.subjects.map((s) => this.eval(s, env));
+      for (const clause of e.clauses) {
+        for (const alt of clause.alts) {
+          const b = new Map();
+          if (!alt.every((p, i) => this.match(p, subjects[i], b))) continue;
+          const cenv = new Env(env);
+          for (const [k, v] of b) cenv.vars.set(k, v);
+          if (clause.guard) {
+            const g = this.eval(clause.guard, cenv);
+            if (typeof g !== 'boolean') throw this.err('TypeError', `a guard has to be a Bool, but this was ${repr(g)}`, clause.guard);
+            if (!g) continue;
+          }
+          this.recordMatch(e, clause, b);
+          return this.eval(clause.body, cenv);
+        }
+      }
+      throw this.err('CaseError', `no pattern matched ${subjects.map(repr).join(', ')}. Gleam requires a case to cover every possible value.`, e);
+    }
+    recordMatch(e, clause, bindings) {
+      if (!this.tracing || !this.stack.length || e.src !== 'code') return;
+      const top = this.stack[this.stack.length - 1];
+      if (this.anonDepth !== top.anonBase) return;
+      top.matches.push({
+        pattern: this.src.slice(clause.patS, clause.patE).replace(/\s+/g, ' '),
+        bindings: [...bindings].map(([k, v]) => [k, repr(v)]),
+        bodyS: clause.body.s,
+        bodyE: clause.body.e,
+      });
+    }
+    match(p, v, b) {
+      switch (p.k) {
+        case 'PDiscard': return true;
+        case 'PVar': b.set(p.name, v); return true;
+        case 'PInt': return typeof v === 'number' && v === p.v;
+        case 'PFloat': return v instanceof GFloat && v.v === p.v;
+        case 'PStr': return v === p.v;
+        case 'PBool': return v === p.v;
+        case 'PNil': return v === NIL;
+        case 'PStrPrefix':
+          if (typeof v !== 'string' || !v.startsWith(p.prefix)) return false;
+          if (p.rest) b.set(p.rest, v.slice(p.prefix.length));
+          return true;
+        case 'PList': {
+          if (!Array.isArray(v)) return false;
+          const n = p.items.length;
+          if (p.hasTail ? v.length < n : v.length !== n) return false;
+          for (let i = 0; i < n; i++) if (!this.match(p.items[i], v[i], b)) return false;
+          if (p.tail) b.set(p.tail, v.slice(n));
+          return true;
+        }
+        case 'PTuple':
+          return v instanceof GTuple && v.items.length === p.items.length && p.items.every((q, i) => this.match(q, v.items[i], b));
+        case 'PCtor': {
+          if (!(v instanceof GRecord) || v.ctor.name !== p.name) {
+            if (!this.ctors.has(p.name)) throw new GleamError('NameError', `there's no constructor called ${p.name}`, p.s, 'code');
+            return false;
+          }
+          const labels = v.ctor.labels;
+          if (!p.spread && p.args.length && p.args.length !== labels.length) {
+            throw new GleamError('TypeError', `${p.name} has ${labels.length} field${labels.length === 1 ? '' : 's'}, but this pattern has ${p.args.length}. Use .. to skip the rest.`, p.s, 'code');
+          }
+          let pos = 0;
+          for (const a of p.args) {
+            let i;
+            if (a.label) {
+              i = labels.indexOf(a.label);
+              if (i < 0) throw new GleamError('TypeError', `${p.name} has no field labelled ${a.label}`, p.s, 'code');
+            } else {
+              i = pos++;
+            }
+            if (!this.match(a.p, v.values[i], b)) return false;
+          }
+          return true;
+        }
+        case 'PAs':
+          if (!this.match(p.p, v, b)) return false;
+          b.set(p.name, v);
+          return true;
+        default: return false;
+      }
+    }
+    binop(e, env) {
+      const op = e.op;
+      if (op === '&&' || op === '||') {
+        const l = this.eval(e.left, env);
+        if (typeof l !== 'boolean') throw this.err('TypeError', `${op} works on Bools, but got ${repr(l)}`, e.left);
+        if (op === '&&' ? !l : l) return l;
+        const r = this.eval(e.right, env);
+        if (typeof r !== 'boolean') throw this.err('TypeError', `${op} works on Bools, but got ${repr(r)}`, e.right);
+        return r;
+      }
+      const l = this.eval(e.left, env);
+      const r = this.eval(e.right, env);
+      switch (op) {
+        case '==': return eq(l, r);
+        case '!=': return !eq(l, r);
+        case '<>':
+          if (typeof l !== 'string' || typeof r !== 'string') throw this.err('TypeError', `<> joins Strings, but got ${repr(typeof l === 'string' ? r : l)}`, e);
+          return l + r;
+        case '+': case '-': case '*': case '/': case '%':
+        case '<': case '<=': case '>': case '>=': {
+          if (typeof l !== 'number' || typeof r !== 'number') {
+            const bad = typeof l === 'number' ? r : l;
+            let hint = '';
+            if (bad instanceof GFloat) hint = ` For Floats, use ${op}. instead.`;
+            else if (op === '+' && typeof bad === 'string') hint = ' To join Strings, use <>.';
+            throw this.err('TypeError', `${op} works on Ints, but got ${repr(bad)}.${hint}`, e);
+          }
+          switch (op) {
+            case '+': return l + r;
+            case '-': return l - r;
+            case '*': return l * r;
+            case '/': return r === 0 ? 0 : Math.trunc(l / r) + 0;
+            case '%': return r === 0 ? 0 : (l % r) + 0;
+            case '<': return l < r;
+            case '<=': return l <= r;
+            case '>': return l > r;
+            default: return l >= r;
+          }
+        }
+        default: {
+          // Float operators end with a dot: +. -. *. /. <. <=. >. >=.
+          if (!(l instanceof GFloat) || !(r instanceof GFloat)) {
+            const bad = l instanceof GFloat ? r : l;
+            const hint = typeof bad === 'number' ? ` For Ints, use ${op.slice(0, -1)} instead.` : '';
+            throw this.err('TypeError', `${op} works on Floats, but got ${repr(bad)}.${hint}`, e);
+          }
+          const a = l.v;
+          const c = r.v;
+          switch (op) {
+            case '+.': return new GFloat(a + c);
+            case '-.': return new GFloat(a - c);
+            case '*.': return new GFloat(a * c);
+            case '/.': return new GFloat(c === 0 ? 0 : a / c);
+            case '<.': return a < c;
+            case '<=.': return a <= c;
+            case '>.': return a > c;
+            case '>=.': return a >= c;
+            default: throw this.err('SyntaxError', `${op} isn't supported`, e);
+          }
+        }
+      }
+    }
+  }
+
+  // ── Standard library subset ─────────────────────────────────────────────────
+
+  function makeModules(it) {
+    const fail = (msg, site) => { throw it.err('TypeError', msg, site); };
+    const need = (test, kind) => (v, fname, site) => (test(v) ? v : fail(`${fname} needs ${kind}, but got ${repr(v)}`, site));
+    const list = need(Array.isArray, 'a List');
+    const int = need((v) => typeof v === 'number', 'an Int');
+    const flt = need((v) => v instanceof GFloat, 'a Float');
+    const str = need((v) => typeof v === 'string', 'a String');
+    const bool = need((v) => typeof v === 'boolean', 'a Bool');
+    const call = (f, args, site) => it.callValue(f, args.map((value) => ({ label: null, value })), site);
+    const ok = (v) => new GRecord(it.ctors.get('Ok'), [v]);
+    const error = (v) => new GRecord(it.ctors.get('Error'), [v]);
+    const B = (mod, name, labels, fn) => [name, new GBuiltin(`${mod}.${name}`, labels, fn)];
+    const cap = (n, site) => (n > 100000 ? fail('that list would be too long for the prototype', site) : n);
+    const graphemes = (s) => Array.from(s);
+    const F = (x) => new GFloat(x);
+
+    const L = 'list';
+    const listMod = Object.fromEntries([
+      B(L, 'length', ['of'], ([s], site) => list(s, 'list.length', site).length),
+      B(L, 'reverse', [null], ([s], site) => [...list(s, 'list.reverse', site)].reverse()),
+      B(L, 'append', [null, null], ([a, b], site) => [...list(a, 'list.append', site), ...list(b, 'list.append', site)]),
+      B(L, 'prepend', ['to', 'this'], ([s, x], site) => [x, ...list(s, 'list.prepend', site)]),
+      B(L, 'map', [null, 'with'], ([s, f], site) => list(s, 'list.map', site).map((x) => call(f, [x], site))),
+      B(L, 'filter', [null, 'keeping'], ([s, f], site) => list(s, 'list.filter', site).filter((x) => bool(call(f, [x], site), 'list.filter\'s function', site))),
+      B(L, 'fold', ['over', 'from', 'with'], ([s, init, f], site) => list(s, 'list.fold', site).reduce((acc, x) => call(f, [acc, x], site), init)),
+      B(L, 'first', [null], ([s], site) => (list(s, 'list.first', site).length ? ok(s[0]) : error(NIL))),
+      B(L, 'rest', [null], ([s], site) => (list(s, 'list.rest', site).length ? ok(s.slice(1)) : error(NIL))),
+      B(L, 'last', [null], ([s], site) => (list(s, 'list.last', site).length ? ok(s[s.length - 1]) : error(NIL))),
+      B(L, 'contains', [null, 'any'], ([s, x], site) => list(s, 'list.contains', site).some((y) => eq(x, y))),
+      B(L, 'is_empty', [null], ([s], site) => list(s, 'list.is_empty', site).length === 0),
+      B(L, 'flatten', [null], ([s], site) => list(s, 'list.flatten', site).flatMap((x) => list(x, 'list.flatten', site))),
+      B(L, 'flat_map', ['over', 'with'], ([s, f], site) => list(s, 'list.flat_map', site).flatMap((x) => list(call(f, [x], site), 'list.flat_map\'s function', site))),
+      B(L, 'take', ['from', 'up_to'], ([s, n], site) => (int(n, 'list.take', site) <= 0 ? [] : list(s, 'list.take', site).slice(0, n))),
+      B(L, 'drop', ['from', 'up_to'], ([s, n], site) => (int(n, 'list.drop', site) <= 0 ? [...list(s, 'list.drop', site)] : list(s, 'list.drop', site).slice(n))),
+      B(L, 'all', ['in', 'satisfying'], ([s, f], site) => list(s, 'list.all', site).every((x) => bool(call(f, [x], site), 'list.all\'s function', site))),
+      B(L, 'any', ['in', 'satisfying'], ([s, f], site) => list(s, 'list.any', site).some((x) => bool(call(f, [x], site), 'list.any\'s function', site))),
+      B(L, 'repeat', ['item', 'times'], ([x, n], site) => (int(n, 'list.repeat', site) <= 0 ? [] : new Array(cap(n, site)).fill(x))),
+      B(L, 'zip', [null, 'with'], ([a, b], site) => {
+        list(a, 'list.zip', site);
+        list(b, 'list.zip', site);
+        return a.slice(0, Math.min(a.length, b.length)).map((x, i) => new GTuple([x, b[i]]));
+      }),
+    ]);
+
+    const I = 'int';
+    const intMod = Object.fromEntries([
+      B(I, 'to_string', [null], ([x], site) => String(int(x, 'int.to_string', site))),
+      B(I, 'max', [null, null], ([a, b], site) => Math.max(int(a, 'int.max', site), int(b, 'int.max', site))),
+      B(I, 'min', [null, null], ([a, b], site) => Math.min(int(a, 'int.min', site), int(b, 'int.min', site))),
+      B(I, 'absolute_value', [null], ([x], site) => Math.abs(int(x, 'int.absolute_value', site))),
+      B(I, 'sum', [null], ([s], site) => list(s, 'int.sum', site).reduce((a, x) => a + int(x, 'int.sum', site), 0)),
+      B(I, 'product', [null], ([s], site) => list(s, 'int.product', site).reduce((a, x) => a * int(x, 'int.product', site), 1)),
+      B(I, 'is_even', [null], ([x], site) => int(x, 'int.is_even', site) % 2 === 0),
+      B(I, 'is_odd', [null], ([x], site) => int(x, 'int.is_odd', site) % 2 !== 0),
+      B(I, 'to_float', [null], ([x], site) => F(int(x, 'int.to_float', site))),
+      B(I, 'negate', [null], ([x], site) => (int(x, 'int.negate', site) === 0 ? 0 : -x)),
+      B(I, 'add', [null, null], ([a, b], site) => int(a, 'int.add', site) + int(b, 'int.add', site)),
+      B(I, 'subtract', [null, null], ([a, b], site) => int(a, 'int.subtract', site) - int(b, 'int.subtract', site)),
+      B(I, 'multiply', [null, null], ([a, b], site) => int(a, 'int.multiply', site) * int(b, 'int.multiply', site)),
+    ]);
+
+    const Fl = 'float';
+    const floatMod = Object.fromEntries([
+      B(Fl, 'to_string', [null], ([x], site) => floatRepr(flt(x, 'float.to_string', site).v)),
+      B(Fl, 'max', [null, null], ([a, b], site) => F(Math.max(flt(a, 'float.max', site).v, flt(b, 'float.max', site).v))),
+      B(Fl, 'min', [null, null], ([a, b], site) => F(Math.min(flt(a, 'float.min', site).v, flt(b, 'float.min', site).v))),
+      B(Fl, 'absolute_value', [null], ([x], site) => F(Math.abs(flt(x, 'float.absolute_value', site).v))),
+      B(Fl, 'sum', [null], ([s], site) => F(list(s, 'float.sum', site).reduce((a, x) => a + flt(x, 'float.sum', site).v, 0))),
+      B(Fl, 'product', [null], ([s], site) => F(list(s, 'float.product', site).reduce((a, x) => a * flt(x, 'float.product', site).v, 1))),
+      B(Fl, 'negate', [null], ([x], site) => F(-flt(x, 'float.negate', site).v)),
+      B(Fl, 'add', [null, null], ([a, b], site) => F(flt(a, 'float.add', site).v + flt(b, 'float.add', site).v)),
+      B(Fl, 'subtract', [null, null], ([a, b], site) => F(flt(a, 'float.subtract', site).v - flt(b, 'float.subtract', site).v)),
+      B(Fl, 'multiply', [null, null], ([a, b], site) => F(flt(a, 'float.multiply', site).v * flt(b, 'float.multiply', site).v)),
+      B(Fl, 'round', [null], ([x], site) => { const v = flt(x, 'float.round', site).v; return (v < 0 ? -Math.round(-v) : Math.round(v)) + 0; }),
+      B(Fl, 'truncate', [null], ([x], site) => Math.trunc(flt(x, 'float.truncate', site).v) + 0),
+      B(Fl, 'floor', [null], ([x], site) => F(Math.floor(flt(x, 'float.floor', site).v))),
+      B(Fl, 'ceiling', [null], ([x], site) => F(Math.ceil(flt(x, 'float.ceiling', site).v))),
+    ]);
+
+    const S = 'string';
+    const stringMod = Object.fromEntries([
+      B(S, 'length', [null], ([s], site) => graphemes(str(s, 'string.length', site)).length),
+      B(S, 'reverse', [null], ([s], site) => graphemes(str(s, 'string.reverse', site)).reverse().join('')),
+      B(S, 'concat', [null], ([s], site) => list(s, 'string.concat', site).map((x) => str(x, 'string.concat', site)).join('')),
+      B(S, 'join', [null, 'with'], ([s, sep], site) => list(s, 'string.join', site).map((x) => str(x, 'string.join', site)).join(str(sep, 'string.join', site))),
+      B(S, 'append', ['to', 'suffix'], ([a, b], site) => str(a, 'string.append', site) + str(b, 'string.append', site)),
+      B(S, 'to_graphemes', [null], ([s], site) => graphemes(str(s, 'string.to_graphemes', site))),
+      B(S, 'uppercase', [null], ([s], site) => str(s, 'string.uppercase', site).toUpperCase()),
+      B(S, 'lowercase', [null], ([s], site) => str(s, 'string.lowercase', site).toLowerCase()),
+      B(S, 'is_empty', [null], ([s], site) => str(s, 'string.is_empty', site) === ''),
+      B(S, 'starts_with', [null, null], ([s, p], site) => str(s, 'string.starts_with', site).startsWith(str(p, 'string.starts_with', site))),
+      B(S, 'ends_with', [null, null], ([s, p], site) => str(s, 'string.ends_with', site).endsWith(str(p, 'string.ends_with', site))),
+      B(S, 'contains', ['does', 'contain'], ([s, p], site) => str(s, 'string.contains', site).includes(str(p, 'string.contains', site))),
+      B(S, 'repeat', [null, 'times'], ([s, n], site) => (int(n, 'string.repeat', site) <= 0 ? '' : str(s, 'string.repeat', site).repeat(cap(n, site)))),
+      B(S, 'inspect', [null], ([x]) => repr(x)),
+      B(S, 'trim', [null], ([s], site) => str(s, 'string.trim', site).trim()),
+      B(S, 'split', [null, 'on'], ([s, on], site) => {
+        str(s, 'string.split', site);
+        str(on, 'string.split', site);
+        return on === '' ? graphemes(s) : s.split(on);
+      }),
+    ]);
+
+    const Bo = 'bool';
+    const boolMod = Object.fromEntries([
+      B(Bo, 'negate', [null], ([x], site) => !bool(x, 'bool.negate', site)),
+      B(Bo, 'and', [null, null], ([a, b], site) => bool(a, 'bool.and', site) && bool(b, 'bool.and', site)),
+      B(Bo, 'or', [null, null], ([a, b], site) => bool(a, 'bool.or', site) || bool(b, 'bool.or', site)),
+      B(Bo, 'to_string', [null], ([x], site) => (bool(x, 'bool.to_string', site) ? 'True' : 'False')),
+    ]);
+
+    const Io = 'io';
+    const ioMod = Object.fromEntries([
+      B(Io, 'println', [null], ([s], site) => { it.output.push(str(s, 'io.println', site)); return NIL; }),
+      B(Io, 'print', [null], ([s], site) => { it.output.push(str(s, 'io.print', site)); return NIL; }),
+    ]);
+
+    return new Map([
+      ['gleam/list', listMod], ['gleam/int', intMod], ['gleam/float', floatMod],
+      ['gleam/string', stringMod], ['gleam/bool', boolMod], ['gleam/io', ioMod],
+    ]);
+  }
+
+  // ── Entry points ────────────────────────────────────────────────────────────
+
+  function lineIn(text, pos) { return text.slice(0, pos).split('\n').length; }
+
+  function errInfo(e, it) {
+    if (e instanceof GleamError) {
+      const line = e.pos === null || e.src !== 'code' ? null : lineIn(it.src, e.pos);
+      return { type: e.gType, message: e.message, line };
+    }
+    if (e instanceof RangeError) {
+      return { type: 'RecursionError', message: 'too many calls are waiting on each other. Check that every call gets closer to a base case.', line: null };
+    }
+    return { type: 'Error', message: String((e && e.message) || e), line: null };
+  }
+
+  // Runs the module, then the call, recording every call to a named function.
+  function run(code, callText, opts = {}) {
+    const src = String(code).replace(/\r\n?/g, '\n');
+    const it = new Interp(src, opts);
+    const base = { nodes: [], output: it.output, lines: it.lines, source: src, ctors: it.ctors };
+    try {
+      it.load(new Parser(src, 'code').module());
+    } catch (e) {
+      return { ...base, ok: false, where: 'code', error: errInfo(e, it), failedNode: null };
+    }
+    const callSrc = String(callText).trim();
+    it.callSrc = callSrc;
+    let callExpr;
+    try {
+      const p = new Parser(callSrc, 'call');
+      if (p.at('EOF')) throw new GleamError('SyntaxError', 'type a call to run, like sum([1, 2, 3])', 0, 'call');
+      callExpr = p.expr();
+      if (!p.at('EOF')) throw new GleamError('SyntaxError', 'the call should be one expression, like sum([1, 2, 3])', p.peek().s, 'call');
+    } catch (e) {
+      return { ...base, ok: false, where: 'call', error: errInfo(e, it), failedNode: null };
+    }
+    it.tracing = true;
+    let value = null;
+    let error = null;
+    try {
+      value = it.eval(callExpr, it.globals);
+    } catch (e) {
+      error = errInfo(e, it);
+    }
+    it.tracing = false;
+    const failed = it.nodes.find((n) => n.error && !n.children.some((c) => it.nodes[c].error));
+    return {
+      ...base,
+      ok: !error,
+      where: error ? (failed ? 'code' : 'call') : null,
+      error,
+      failedNode: failed ? failed.id : null,
+      value,
+      valueRepr: error ? null : repr(value),
+      nodes: it.nodes,
+    };
+  }
+
+  // Reads a prediction as a Gleam value: literals, lists, tuples and
+  // constructors only, so a call can't stand in for an answer.
+  function literal(e, ctors) {
+    const bad = () => { throw new GleamError('ValueError', 'not a value', e.s, 'value'); };
+    switch (e.k) {
+      case 'Int': return e.v;
+      case 'Float': return new GFloat(e.v);
+      case 'Str': return e.v;
+      case 'Neg': {
+        const v = literal(e.x, ctors);
+        if (typeof v === 'number') return v === 0 ? 0 : -v;
+        if (v instanceof GFloat) return new GFloat(-v.v);
+        return bad();
+      }
+      case 'List': {
+        const items = e.items.map((x) => literal(x, ctors));
+        if (!e.tail) return items;
+        const tail = literal(e.tail, ctors);
+        return Array.isArray(tail) ? items.concat(tail) : bad();
+      }
+      case 'Tuple': return new GTuple(e.items.map((x) => literal(x, ctors)));
+      case 'Ctor': {
+        if (e.name === 'True') return true;
+        if (e.name === 'False') return false;
+        if (e.name === 'Nil') return NIL;
+        const c = ctors.get(e.name);
+        return c && c.arity === 0 ? c.singleton : bad();
+      }
+      case 'Call': {
+        if (e.fn.k !== 'Ctor') return bad();
+        const c = ctors.get(e.fn.name);
+        if (!c || c.arity !== e.args.length) return bad();
+        const values = new Array(c.arity);
+        let pos = 0;
+        for (const a of e.args) {
+          const i = a.label ? c.labels.indexOf(a.label) : pos++;
+          if (i < 0 || values[i] !== undefined) return bad();
+          values[i] = literal(a.value, ctors);
+        }
+        return new GRecord(c, values);
+      }
+      default: return bad();
+    }
+  }
+
+  function checkPrediction(text, actual, ctors) {
+    try {
+      const p = new Parser(String(text).trim(), 'value');
+      if (p.at('EOF')) return { ok: false };
+      const e = p.expr();
+      if (!p.at('EOF')) return { ok: false };
+      const known = ctors || new Map([['Ok', new GCtor('Ok', [null])], ['Error', new GCtor('Error', [null])]]);
+      return { ok: true, match: eq(literal(e, known), actual) };
+    } catch (e) {
+      return { ok: false };
+    }
+  }
+
+  return { run, checkPrediction, repr, typeName, GleamError };
+})();
+
+if (typeof module !== 'undefined') module.exports = GleamMini;
+
+</script>
+<script>
+(() => {
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const callText = (n) => `${n.name}(${n.args.join(', ')})`;
+
+  // ── Examples ────────────────────────────────────────────────────────────────
+
+  const PY_EXAMPLES = [
+    {
+      label: 'sum_list: add up a list',
+      call: 'sum_list([1, 2, 3])',
+      code: `def sum_list(s):
+    """Return the sum of the numbers in s.
+
+    >>> sum_list([1, 2, 3])
+    6
+    """
+    if s == []:
+        return 0
+    else:
+        return s[0] + sum_list(s[1:])
+`,
+    },
+    {
+      label: 'factorial',
+      call: 'factorial(4)',
+      code: `def factorial(n):
+    """Return n * (n - 1) * ... * 1."""
+    if n == 0:
+        return 1
+    return n * factorial(n - 1)
+`,
+    },
+    {
+      label: 'reverse: build a new list',
+      call: 'reverse([1, 2, 3])',
+      code: `def reverse(s):
+    """Return a new list with the items of s in reverse order."""
+    if not s:
+        return []
+    return reverse(s[1:]) + [s[0]]
+`,
+    },
+    {
+      label: 'fib: tree recursion',
+      call: 'fib(4)',
+      code: `def fib(n):
+    """Return the nth Fibonacci number."""
+    if n == 0:
+        return 0
+    elif n == 1:
+        return 1
+    else:
+        return fib(n - 2) + fib(n - 1)
+`,
+    },
+    {
+      label: 'count_partitions: tree recursion',
+      call: 'count_partitions(4, 2)',
+      code: `def count_partitions(n, m):
+    """Count the ways to write n as a sum of parts no bigger than m."""
+    if n == 0:
+        return 1
+    elif n < 0 or m == 0:
+        return 0
+    else:
+        with_m = count_partitions(n - m, m)
+        without_m = count_partitions(n, m - 1)
+        return with_m + without_m
+`,
+    },
+  ];
+
+  const GLEAM_EXAMPLES = [
+    {
+      label: 'sum: add up a list',
+      call: 'sum([1, 2, 3])',
+      code: `/// Return the sum of the numbers in s.
+pub fn sum(s: List(Int)) -> Int {
+  case s {
+    [] -> 0
+    [first, ..rest] -> first + sum(rest)
+  }
+}
+`,
+    },
+    {
+      label: 'factorial',
+      call: 'factorial(4)',
+      code: `/// Return n * (n - 1) * ... * 1.
+pub fn factorial(n: Int) -> Int {
+  case n {
+    0 -> 1
+    _ -> n * factorial(n - 1)
+  }
+}
+`,
+    },
+    {
+      label: 'reverse: build a new list',
+      call: 'reverse([1, 2, 3])',
+      code: `import gleam/list
+
+/// Return a new list with the items of s in reverse order.
+pub fn reverse(s: List(Int)) -> List(Int) {
+  case s {
+    [] -> []
+    [first, ..rest] -> list.append(reverse(rest), [first])
+  }
+}
+`,
+    },
+    {
+      label: 'is_sorted: two items at a time',
+      call: 'is_sorted([1, 2, 4, 3])',
+      code: `/// Return True if the numbers in s never go down.
+pub fn is_sorted(s: List(Int)) -> Bool {
+  case s {
+    [] | [_] -> True
+    [a, b, ..rest] -> a <= b && is_sorted([b, ..rest])
+  }
+}
+`,
+    },
+    {
+      label: 'fib: tree recursion',
+      call: 'fib(4)',
+      code: `/// Return the nth Fibonacci number.
+pub fn fib(n: Int) -> Int {
+  case n {
+    0 -> 0
+    1 -> 1
+    _ -> fib(n - 2) + fib(n - 1)
+  }
+}
+`,
+    },
+    {
+      label: 'count_partitions: tree recursion',
+      call: 'count_partitions(4, 2)',
+      code: `/// Count the ways to write n as a sum of parts no bigger than m.
+pub fn count_partitions(n: Int, m: Int) -> Int {
+  case n, m {
+    0, _ -> 1
+    _, 0 -> 0
+    _, _ if n < 0 -> 0
+    _, _ -> count_partitions(n - m, m) + count_partitions(n, m - 1)
+  }
+}
+`,
+    },
+    {
+      label: 'total: add up a tree',
+      call: 'total(Node(Node(Leaf, 1, Leaf), 2, Node(Leaf, 3, Leaf)))',
+      code: `pub type Tree {
+  Leaf
+  Node(Tree, Int, Tree)
+}
+
+/// Return the sum of all the numbers in t.
+pub fn total(t: Tree) -> Int {
+  case t {
+    Leaf -> 0
+    Node(left, value, right) -> total(left) + value + total(right)
+  }
+}
+`,
+    },
+  ];
+
+  // ── Plugging results into source lines ─────────────────────────────────────
+
+  // Python: one source line with each call made on it replaced by that call's
+  // result once it's resolved. Null when the calls can't be matched
+  // one-to-one with the call sites in the text.
+  function pyPlugLine(src, kids, ctx) {
+    const names = [...new Set(kids.map((c) => c.name))];
+    if (!names.every((nm) => /^[A-Za-z_]\w*$/.test(nm))) return null;
+    const siteAt = (pos) => {
+      if (pos > 0 && /[\w.]/.test(src[pos - 1])) return null;
+      return names.find((nm) => src.startsWith(nm, pos) && /^\s*\(/.test(src.slice(pos + nm.length))) || null;
+    };
+    const closeParen = (open) => {
+      let depth = 0;
+      let quote = null;
+      for (let j = open; j < src.length; j++) {
+        const ch = src[j];
+        if (quote) { if (ch === '\\') j++; else if (ch === quote) quote = null; continue; }
+        if (ch === '"' || ch === "'") quote = ch;
+        else if ('([{'.includes(ch)) depth++;
+        else if (')]}'.includes(ch) && --depth === 0) return j;
+      }
+      return -1;
+    };
+    let html = '';
+    let i = 0;
+    let k = 0;
+    while (i < src.length) {
+      const ch = src[i];
+      if (ch === '#') break;
+      if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        while (j < src.length && src[j] !== ch) j += src[j] === '\\' ? 2 : 1;
+        html += esc(src.slice(i, j + 1));
+        i = j + 1;
+        continue;
+      }
+      const name = siteAt(i);
+      if (name) {
+        if (k >= kids.length || kids[k].name !== name) return null;
+        const open = src.indexOf('(', i + name.length);
+        const close = closeParen(open);
+        if (close < 0) return null;
+        const inner = src.slice(open + 1, close);
+        if (names.some((nm) => new RegExp(`(^|[^\\w.])${nm}\\s*\\(`).test(inner))) return null;
+        html += ctx.plugMark(kids[k++]);
+        i = close + 1;
+        continue;
+      }
+      html += esc(ch);
+      i++;
+    }
+    return k === kids.length ? html.trim() : null;
+  }
+
+  function pyPlugIn(n, ctx) {
+    if (n.error || !n.children.length) return null;
+    const kids = ctx.kidsOf(n);
+    const lineNums = [...new Set(kids.map((c) => c.callLine))];
+    const out = [];
+    for (const ln of lineNums) {
+      const src = ctx.run.lines[ln - 1];
+      if (src === undefined) return null;
+      const html = pyPlugLine(src.trim(), kids.filter((c) => c.callLine === ln), ctx);
+      if (html === null) return null;
+      out.push(html);
+    }
+    return out;
+  }
+
+  // Gleam: the interpreter records exactly where each call was made, so each
+  // call is swapped for its result in place. Calls that share a spot (made in
+  // a loop through list.map, say) or sit inside each other give no line.
+  function gleamPlugIn(n, ctx) {
+    if (n.error || !n.children.length) return null;
+    const src = ctx.run.source;
+    const kids = ctx.kidsOf(n);
+    if (kids.some((k) => k.callSrc !== 'code')) return null;
+    const sorted = [...kids].sort((a, b) => a.callS - b.callS);
+    for (let i = 1; i < sorted.length; i++) if (sorted[i].callS < sorted[i - 1].callE) return null;
+    const lineStart = (pos) => src.lastIndexOf('\n', pos - 1) + 1;
+    const lineEnd = (pos) => { const k = src.indexOf('\n', pos); return k < 0 ? src.length : k; };
+    const groups = new Map();
+    for (const k of kids) {
+      const ls = lineStart(k.callS);
+      if (lineEnd(ls) < k.callE) return null;
+      if (!groups.has(ls)) groups.set(ls, []);
+      groups.get(ls).push(k);
+    }
+    const out = [];
+    for (const [ls, group] of groups) {
+      const le = lineEnd(ls);
+      group.sort((a, b) => a.callS - b.callS);
+      const firstCall = group[0].callS;
+      // Start at the clause body when the pattern is on the same line: "[first, ..rest] -> first + sum(rest)".
+      const body = n.matches.map((m) => m.bodyS).filter((p) => p >= ls && p <= firstCall).pop();
+      let pos = body !== undefined ? body : ls;
+      while (pos < le && /\s/.test(src[pos])) pos++;
+      let html = '';
+      for (const k of group) {
+        html += esc(src.slice(pos, k.callS)) + ctx.plugMark(k);
+        pos = k.callE;
+      }
+      let rest = src.slice(pos, le);
+      if (!rest.includes('"')) rest = rest.replace(/\/\/.*$/, '');
+      out.push((html + esc(rest)).trim());
+    }
+    return out;
+  }
+
+  const squash = (s, max = 110) => {
+    const t = s.replace(/\s+/g, ' ').trim();
+    return t.length > max ? `${t.slice(0, max - 1)}…` : t;
+  };
+
+  const pluggedHtml = (lines) => (lines
+    ? `<div class="branch"><span>With the results plugged in</span><span class="plug-lines">${lines.map((h) => `<code>${h}</code>`).join('')}</span></div>`
+    : '');
+
+  // ── Languages ───────────────────────────────────────────────────────────────
+
+  const PYTHON = {
+    key: 'py',
+    lang: 'Python',
+    examples: PY_EXAMPLES,
+    callHint: 'sum_list([1, 2, 3])',
+    subsetHtml: 'It runs <code>def</code>, <code>if</code>/<code>elif</code>/<code>else</code>, <code>return</code>, assignment, <code>for</code> and <code>while</code> loops, lists, tuples, strings, slicing, list comprehensions, <code>lambda</code>, and built-ins like <code>len</code>, <code>sum</code>, <code>max</code>, <code>min</code>, <code>abs</code>, <code>range</code> and <code>print</code>. Not yet: classes, dictionaries, imports and f-strings. It runs in your browser, and nothing is sent anywhere.',
+    run: (code, call) => PyMini.run(code, call),
+    errType: (err) => (err && err.pyType) || 'an error',
+    check: (text, n) => PyMini.checkPrediction(text, n.result),
+    badNote: (n) => (typeof n.result === 'string' ? "Strings need quotes, like 'abc'." : 'Type a Python value, like 6 or [3, 2, 1].'),
+    firstDef: (code) => (code.match(/^\s*def\s+([A-Za-z_]\w*)/m) || [])[1] || null,
+    details(n, ctx) {
+      const binds = n.params.map((p, i) => `<span>${esc(p)} = <code>${esc(n.args[i])}</code></span>`).join('');
+      let branch;
+      if (n.error) branch = `<span>Stopped here with</span><code>${esc(n.error.pyType)}: ${esc(n.error.message)}</code>`;
+      else if (n.retLine) branch = `<span>Returned from line ${n.retLine}</span><code>${esc(ctx.run.lines[n.retLine - 1].trim())}</code>`;
+      else branch = '<span>Reached the end of the function without a <code>return</code>, so it returns <code>None</code></span>';
+      return `${binds ? `<div class="binds">${binds}</div>` : ''}<div class="branch">${branch}</div>${pluggedHtml(pyPlugIn(n, ctx))}`;
+    },
+  };
+
+  const GLEAM = {
+    key: 'gl',
+    lang: 'Gleam',
+    examples: GLEAM_EXAMPLES,
+    callHint: 'sum([1, 2, 3])',
+    subsetHtml: 'It runs functions, <code>case</code> with list, tuple, number, string and custom-type patterns (with guards and <code>|</code> alternatives), <code>let</code>, <code>{ }</code> blocks, lists, tuples, custom types, pipes, captures like <code>add(_, 1)</code>, anonymous functions, <code>echo</code>, and some functions from <code>gleam/list</code>, <code>gleam/int</code>, <code>gleam/float</code>, <code>gleam/string</code>, <code>gleam/bool</code> and <code>gleam/io</code>. Types aren\'t checked before it runs, so a type mistake shows up as an error while it runs. Not yet: <code>use</code>, bit arrays and other modules. It runs in your browser, and nothing is sent anywhere.',
+    run: (code, call) => GleamMini.run(code, call),
+    errType: (err) => (err && err.gType) || 'an error',
+    check: (text, n, run) => GleamMini.checkPrediction(text, n.result, run.ctors),
+    badNote: (n) => (typeof n.result === 'string' ? 'Strings need double quotes, like "abc".' : 'Type a Gleam value, like 6 or [3, 2, 1].'),
+    firstDef: (code) => (code.match(/^\s*(?:pub\s+)?fn\s+([a-z_]\w*)/m) || [])[1] || null,
+    details(n, ctx) {
+      const src = ctx.run.source;
+      const parts = [];
+      const binds = n.params.map((p, i) => `<span>${esc(p)} = <code>${esc(n.args[i])}</code></span>`).join('');
+      if (binds) parts.push(`<div class="binds">${binds}</div>`);
+      for (const m of n.matches) {
+        const bound = m.bindings.filter(([k]) => !k.startsWith('_')).map(([k, v]) => `<span>${esc(k)} = <code>${esc(v)}</code></span>`).join('');
+        parts.push(`<div class="branch"><span>Matched</span><code>${esc(m.pattern)}</code>${bound ? `<span class="bound">${bound}</span>` : ''}</div>`);
+      }
+      if (n.error) {
+        parts.push(`<div class="branch"><span>Stopped here with</span><code>${esc(n.error.gType)}: ${esc(n.error.message)}</code></div>`);
+      } else if (n.matches.length) {
+        const m = n.matches[n.matches.length - 1];
+        parts.push(`<div class="branch"><span>Returned</span><code>${esc(squash(src.slice(m.bodyS, m.bodyE)))}</code></div>`);
+      }
+      parts.push(pluggedHtml(gleamPlugIn(n, ctx)));
+      return parts.join('');
+    },
+  };
+
+  // ── The trace panel, used by both languages ─────────────────────────────────
+
+  function createTracer(panel, L) {
+    const k = L.key;
+    panel.innerHTML = `
+      <section class="pane" aria-label="Code">
+        <div class="field">
+          <label for="${k}-example">Example</label>
+          <select id="${k}-example"></select>
+        </div>
+        <div class="field">
+          <label for="${k}-code">Code</label>
+          <textarea id="${k}-code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+        </div>
+        <div class="field">
+          <label for="${k}-call">Call</label>
+          <input id="${k}-call" class="mono" spellcheck="false" autocapitalize="off" autocomplete="off">
+        </div>
+        <div class="actions">
+          <button id="${k}-run" class="btn primary" type="button">Run</button>
+          <span id="${k}-status" class="hint" role="status"></span>
+        </div>
+        <details class="subset">
+          <summary>What ${L.lang} it runs</summary>
+          <p>${L.subsetHtml}</p>
+        </details>
+      </section>
+      <section class="pane" aria-label="Calls">
+        <div class="calls-head">
+          <div>
+            <h2>Calls</h2>
+            <p>Predict the folded calls first, from what the function is supposed to return. An open call depends on the calls inside it, so its box unlocks once you've predicted them.</p>
+          </div>
+          <div class="score" aria-live="polite">
+            <span id="${k}-score-text"></span>
+            <div class="bar" aria-hidden="true"><span id="${k}-score-bar"></span></div>
+          </div>
+        </div>
+        <div class="tools">
+          <button id="${k}-open-all" class="btn" type="button">Open all calls</button>
+          <button id="${k}-reveal-all" class="btn" type="button">Show all answers</button>
+          <button id="${k}-reset" class="btn" type="button">Start over</button>
+        </div>
+        <div id="${k}-banner" class="banner" hidden></div>
+        <div id="${k}-tree" class="tree"></div>
+        <div id="${k}-printed" class="printed" hidden><strong>Printed</strong><pre id="${k}-printed-text"></pre></div>
+      </section>`;
+
+    const $ = (id) => document.getElementById(`${k}-${id}`);
+    const codeEl = $('code');
+    const callEl = $('call');
+    const exampleEl = $('example');
+    const treeEl = $('tree');
+    const state = { run: null, open: new Map(), guess: new Map(), status: new Map(), note: new Map() };
+
+    exampleEl.innerHTML = L.examples.map((ex, i) => `<option value="${i}">${esc(ex.label)}</option>`).join('') +
+      '<option value="custom">Your own code</option>';
+
+    const isOpen = (n) => (state.open.has(n.id) ? state.open.get(n.id) : n.depth < 1);
+    const countInside = (n) => n.children.reduce((sum, id) => sum + 1 + countInside(state.run.nodes[id]), 0);
+    const practiceNodes = () => (state.run ? state.run.nodes.filter((n) => !n.error) : []);
+    const kidsOf = (n) => n.children.map((id) => state.run.nodes[id]);
+    const resolved = (n) => Boolean(n.error) || ['correct', 'shown'].includes(state.status.get(n.id));
+    // An open call depends on the calls inside it, so its box waits for them.
+    // A folded call is trusted: it can be predicted right away.
+    const isLocked = (n) => isOpen(n) && n.children.length > 0 && kidsOf(n).some((c) => !resolved(c));
+    const ctx = {
+      get run() { return state.run; },
+      kidsOf,
+      plugMark: (kid) => (resolved(kid) && !kid.error
+        ? `<mark class="plug">${esc(kid.resultRepr)}</mark>`
+        : `<mark class="plug pending">${esc(callText(kid))}</mark>`),
+    };
+
+    function load(code, call, exampleValue) {
+      codeEl.value = code;
+      callEl.value = call;
+      exampleEl.value = exampleValue;
+      runCode();
+    }
+
+    function runCode() {
+      const r = L.run(codeEl.value, callEl.value);
+      state.run = r;
+      state.open = new Map();
+      state.guess = new Map();
+      state.status = new Map();
+      state.note = new Map();
+      const banner = $('banner');
+      banner.hidden = true;
+      banner.className = 'banner';
+      if (r.error) {
+        const e = r.error;
+        const where = r.where === 'call' ? 'In the call' : e.line ? `Line ${e.line}` : 'While running';
+        banner.innerHTML = `<strong>${esc(e.type)}</strong> · ${esc(where)}: ${esc(e.message)}`;
+        banner.hidden = false;
+        // Open the path down to the call that failed, so the error is easy to find.
+        if (r.failedNode !== null && r.failedNode !== undefined) {
+          for (let id = r.failedNode; id !== null; id = r.nodes[id].parent) state.open.set(id, true);
+        }
+      } else if (!r.nodes.length) {
+        banner.className = 'banner info';
+        banner.innerHTML = `This call returned <code>${esc(r.valueRepr)}</code> without calling a function from your code. Call one of your functions, like <code>${esc(L.firstDef(codeEl.value) || 'f')}(...)</code>.`;
+        banner.hidden = false;
+      }
+      $('printed').hidden = !r.output.length;
+      $('printed-text').textContent = r.output.join('\n');
+      $('status').textContent = r.error ? 'Stopped with an error' : `${r.nodes.length} call${r.nodes.length === 1 ? '' : 's'} recorded`;
+      render();
+    }
+
+    function resultSlot(n) {
+      const call = callText(n);
+      if (n.error) return `<span class="slot"><span class="err">stopped with ${esc(L.errType(n.error))}</span></span>`;
+      const st = state.status.get(n.id) || 'pending';
+      if (st === 'correct') {
+        return `<span class="slot"><span class="ret">returns</span><code class="val ok">${esc(n.resultRepr)}</code><span class="mark ok">✓ correct</span></span>`;
+      }
+      if (st === 'shown') {
+        return `<span class="slot"><span class="ret">returns</span><code class="val shown">${esc(n.resultRepr)}</code><span class="mark shown">shown</span></span>`;
+      }
+      if (isLocked(n)) {
+        const c = n.children.length;
+        return `<span class="slot"><span class="ret">returns</span><span class="locked">Predict the call${c === 1 ? '' : 's'} inside first</span></span>`;
+      }
+      const wrong = st === 'wrong';
+      const note = state.note.get(n.id) || 'Not quite.';
+      return `<span class="slot">
+        <span class="ret">returns</span>
+        <input class="guess${wrong ? ' is-wrong' : ''}" id="${k}-guess-${n.id}" data-id="${n.id}" value="${esc(state.guess.get(n.id) || '')}"
+          placeholder="?" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Predict what ${esc(call)} returns">
+        <button class="btn check" type="button" data-act="check" data-id="${n.id}">Check</button>
+        ${wrong ? `<span class="nope">${esc(note)}</span><button class="linkish" type="button" data-act="show" data-id="${n.id}">Show answer</button>` : ''}
+      </span>`;
+    }
+
+    function renderNode(n) {
+      const open = isOpen(n);
+      const inside = countInside(n);
+      const label = `${open ? 'Fold' : 'Open'} ${callText(n)}`;
+      return `<li class="node" data-id="${n.id}">
+        <div class="row">
+          <button class="fold" type="button" data-act="fold" data-id="${n.id}" aria-expanded="${open}" aria-label="${esc(label)}" title="${open ? 'Fold this call' : 'Open this call'}">${open ? '▾' : '▸'}</button>
+          <code class="call">${esc(callText(n))}</code>
+          ${!open && inside ? `<span class="inside">+${inside} call${inside === 1 ? '' : 's'} inside</span>` : ''}
+          ${resultSlot(n)}
+        </div>
+        ${open ? `<div class="details">${L.details(n, ctx)}</div>` : ''}
+        ${open && n.children.length ? `<ul class="calls">${n.children.map((id) => renderNode(state.run.nodes[id])).join('')}</ul>` : ''}
+      </li>`;
+    }
+
+    function render() {
+      const r = state.run;
+      const roots = r ? r.nodes.filter((n) => n.parent === null) : [];
+      treeEl.innerHTML = roots.length
+        ? `<ul class="calls root">${roots.map(renderNode).join('')}</ul>`
+        : '<p class="empty">No calls to show yet. Run a call to one of your functions.</p>';
+      const all = practiceNodes();
+      const correct = all.filter((n) => state.status.get(n.id) === 'correct').length;
+      const shown = all.filter((n) => state.status.get(n.id) === 'shown').length;
+      const left = all.length - correct - shown;
+      $('score-text').innerHTML = all.length
+        ? `<strong>${correct}</strong> of ${all.length} predicted${shown ? ` · ${shown} shown` : ''}${left === 0 ? ' · all done' : ''}`
+        : '';
+      $('score-bar').style.width = all.length ? `${(100 * correct) / all.length}%` : '0';
+    }
+
+    // After a call is resolved: if that unlocked the call above it, go there;
+    // otherwise go to the next box still waiting, in reading order.
+    function focusNextGuess(afterId) {
+      const n = state.run.nodes[afterId];
+      if (n && n.parent !== null) {
+        const up = document.getElementById(`${k}-guess-${n.parent}`);
+        if (up) { up.focus(); return; }
+      }
+      const inputs = [...treeEl.querySelectorAll('input.guess')];
+      if (!inputs.length) return;
+      const after = inputs.find((el) => Number(el.dataset.id) > afterId);
+      (after || inputs[0]).focus();
+    }
+
+    function check(id) {
+      const n = state.run.nodes[id];
+      const text = (state.guess.get(id) || '').trim();
+      if (!text) {
+        state.status.set(id, 'wrong');
+        state.note.set(id, 'Type a prediction first.');
+      } else {
+        const res = L.check(text, n, state.run);
+        if (!res.ok) {
+          state.status.set(id, 'wrong');
+          state.note.set(id, L.badNote(n));
+        } else if (res.match) {
+          state.status.set(id, 'correct');
+        } else {
+          state.status.set(id, 'wrong');
+          state.note.set(id, 'Not quite.');
+        }
+      }
+      render();
+      if (state.status.get(id) === 'correct') focusNextGuess(id);
+      else {
+        const el = document.getElementById(`${k}-guess-${id}`);
+        if (el) { el.focus(); el.select(); }
+      }
+    }
+
+    function toggle(id, refocus) {
+      const n = state.run.nodes[id];
+      state.open.set(id, !isOpen(n));
+      render();
+      if (refocus) {
+        const again = treeEl.querySelector(`button[data-act="fold"][data-id="${id}"]`);
+        if (again) again.focus();
+      }
+    }
+
+    treeEl.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button[data-act]');
+      if (!btn) {
+        // A click anywhere on a call's row outside its prediction box opens or
+        // folds the call, unless the click ended a text selection.
+        const row = ev.target.closest('.row');
+        if (!row || ev.target.closest('.slot') || String(window.getSelection())) return;
+        toggle(Number(row.closest('li.node').dataset.id), false);
+        return;
+      }
+      const id = Number(btn.dataset.id);
+      const act = btn.dataset.act;
+      if (act === 'fold') {
+        toggle(id, true);
+      } else if (act === 'check') {
+        check(id);
+      } else if (act === 'show') {
+        state.status.set(id, 'shown');
+        render();
+        focusNextGuess(id);
+      }
+    });
+    treeEl.addEventListener('input', (ev) => {
+      if (ev.target.matches('input.guess')) state.guess.set(Number(ev.target.dataset.id), ev.target.value);
+    });
+    treeEl.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && ev.target.matches('input.guess')) {
+        ev.preventDefault();
+        check(Number(ev.target.dataset.id));
+      }
+    });
+
+    $('run').addEventListener('click', runCode);
+    exampleEl.addEventListener('change', () => {
+      if (exampleEl.value !== 'custom') {
+        const ex = L.examples[Number(exampleEl.value)];
+        load(ex.code, ex.call, exampleEl.value);
+      } else codeEl.focus();
+    });
+    codeEl.addEventListener('input', () => { exampleEl.value = 'custom'; });
+    const indent = L.key === 'gl' ? '  ' : '    ';
+    codeEl.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Tab' && !ev.shiftKey && !ev.altKey && !ev.metaKey && !ev.ctrlKey) {
+        ev.preventDefault();
+        const { selectionStart: a, selectionEnd: b, value } = codeEl;
+        codeEl.value = value.slice(0, a) + indent + value.slice(b);
+        codeEl.selectionStart = codeEl.selectionEnd = a + indent.length;
+        exampleEl.value = 'custom';
+      }
+      if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); runCode(); }
+    });
+    callEl.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); runCode(); }
+    });
+    $('open-all').addEventListener('click', () => {
+      if (!state.run) return;
+      state.run.nodes.forEach((n) => state.open.set(n.id, true));
+      render();
+    });
+    $('reveal-all').addEventListener('click', () => {
+      practiceNodes().forEach((n) => { if (state.status.get(n.id) !== 'correct') state.status.set(n.id, 'shown'); });
+      render();
+    });
+    $('reset').addEventListener('click', () => {
+      state.status = new Map();
+      state.guess = new Map();
+      state.note = new Map();
+      state.open = new Map();
+      render();
+    });
+
+    load(L.examples[0].code, L.examples[0].call, '0');
+    return { load };
+  }
+
+  // ── Approach mode ───────────────────────────────────────────────────────────
+
+  const PROBLEMS = [
+    {
+      name: 'sum_list',
+      params: ['s'],
+      doc: 'Return the sum of the numbers in s.',
+      examples: [['[1, 2, 3]'], ['[5, 5]'], ['[4, 1, 6, 2]']],
+      tests: [['[]'], ['[7]'], ['[10, -2, 3]']],
+      size: 'len(s)',
+      calls: 1,
+      solution: `def sum_list(s):
+    if s == []:
+        return 0
+    return s[0] + sum_list(s[1:])
+`,
+    },
+    {
+      name: 'reverse',
+      params: ['s'],
+      doc: 'Return a new list with the items of s in reverse order.',
+      examples: [['[1, 2, 3]'], ["['a', 'b']"], ['[4, 5, 6, 7]']],
+      tests: [['[]'], ['[9]'], ['[1, 2, 1, 3]']],
+      size: 'len(s)',
+      calls: 1,
+      solution: `def reverse(s):
+    if s == []:
+        return []
+    return reverse(s[1:]) + [s[0]]
+`,
+    },
+    {
+      name: 'sum_digits',
+      params: ['n'],
+      doc: 'Return the sum of the digits of n, a whole number that is 0 or more.',
+      examples: [['2026'], ['45'], ['109']],
+      tests: [['0'], ['7'], ['99999'], ['100']],
+      size: 'n',
+      calls: 1,
+      solution: `def sum_digits(n):
+    if n < 10:
+        return n
+    return n % 10 + sum_digits(n // 10)
+`,
+    },
+    {
+      name: 'count_stairs',
+      params: ['n'],
+      doc: 'Count the ways to climb n stairs, taking 1 or 2 stairs at a time. n is 1 or more.',
+      hint: 'Every way to climb starts with a choice: take 1 stair, or take 2. Write one smaller input for each choice.',
+      examples: [['5'], ['4'], ['3']],
+      tests: [['1'], ['2'], ['6'], ['10']],
+      size: 'n',
+      calls: 2,
+      solution: `def count_stairs(n):
+    if n <= 2:
+        return n
+    return count_stairs(n - 1) + count_stairs(n - 2)
+`,
+    },
+    {
+      name: 'count_partitions',
+      params: ['n', 'm'],
+      doc: 'Count the ways to write n as a sum of parts no bigger than m. Order doesn\'t matter, so 1 + 2 and 2 + 1 count once.',
+      hint: 'Every way either uses at least one part of size m, or uses no part of size m. Write one smaller input for each choice.',
+      examples: [['6', '4'], ['5', '3'], ['4', '2']],
+      tests: [['0', '3'], ['3', '0'], ['7', '7'], ['10', '4']],
+      size: 'n + m',
+      calls: 2,
+      solution: `def count_partitions(n, m):
+    if n == 0:
+        return 1
+    elif n < 0 or m == 0:
+        return 0
+    return count_partitions(n - m, m) + count_partitions(n, m - 1)
+`,
+    },
+  ];
+
+  const TEST_OPTS = { maxCalls: 5000, maxDepth: 200 };
+  const py = (code, call) => PyMini.run(code, call, TEST_OPTS);
+  const article = (t) => (/^[aeiou]/.test(t) ? 'an' : 'a');
+
+  function createApproach(onTrace) {
+    const $ = (id) => document.getElementById(`ap-${id}`);
+    const stepsEl = $('steps');
+    const resultEl = $('result');
+    const states = new Map();
+    let p = null;
+    let s = null;
+
+    $('problem').innerHTML = PROBLEMS.map((q, i) => `<option value="${i}">${i + 1}. ${esc(q.name)}${q.calls > 1 ? ' (tree recursion)' : ''}</option>`).join('');
+
+    const call = (args) => `${p.name}(${args.join(', ')})`;
+    const params = () => p.params.join(', ');
+    // The docstring, wrapped like real code so it doesn't run off the side.
+    function docLines() {
+      const lines = [];
+      let cur = '';
+      for (const w of p.doc.split(' ')) {
+        if (cur && `${cur} ${w}`.length > 44) { lines.push(cur); cur = w; } else cur = cur ? `${cur} ${w}` : w;
+      }
+      lines.push(cur);
+      lines[0] = `"""${lines[0]}`;
+      lines[lines.length - 1] += '"""';
+      return lines.map((l) => `    ${l}`);
+    }
+
+    function staff(args) {
+      const r = py(p.solution, call(args));
+      return r.ok ? r : null;
+    }
+
+    function freshState() {
+      return {
+        done: [false, false, false, false],
+        smaller: new Array(p.calls).fill(''),
+        smallerArgs: null, // [example][call] -> list of arg reprs
+        msg: {},
+        trust: new Array(p.calls).fill(''),
+        trustStatus: new Array(p.calls).fill('pending'),
+        combine: '',
+        rows: null,
+        tries: 0,
+        bases: [{ cond: '', value: '' }],
+        tests: null,
+      };
+    }
+
+    function choose(i) {
+      p = PROBLEMS[i];
+      if (!p.want) {
+        p.want = p.examples.map((args) => staff(args).valueRepr);
+        p.expected = [...p.examples, ...p.tests].map((args) => staff(args).valueRepr);
+      }
+      if (!states.has(i)) states.set(i, freshState());
+      s = states.get(i);
+      $('problem').value = String(i);
+      $('sig').textContent = [`def ${p.name}(${params()}):`, ...docLines()].join('\n');
+      $('examples').innerHTML = p.examples.map((args, j) => `<li><code>${esc(call(args))}</code> returns <code>${esc(p.want[j])}</code></li>`).join('');
+      render();
+    }
+
+    // Evaluates "[expr]" with the parameters bound to one example's arguments.
+    function evalList(expr, args) {
+      const r = PyMini.run(`def __in(${params()}):\n    return [${expr}]\n`, `__in(${args.join(', ')})`);
+      return r;
+    }
+    function sizeOf(argReprs) {
+      const r = PyMini.run(`def __size(${params()}):\n    return ${p.size}\n`, `__size(${argReprs.join(', ')})`);
+      return r.ok ? r.value : null;
+    }
+
+    // ── Step checks ──
+
+    function checkSmaller() {
+      const exprs = s.smaller.map((x) => x.trim());
+      if (exprs.some((x) => !x)) return fail(1, p.calls > 1 ? 'Fill in a smaller input for each choice.' : 'Type a smaller input first.');
+      const all = [];
+      for (const args of p.examples) {
+        const perCall = [];
+        for (const expr of exprs) {
+          const where = `For <code>${esc(call(args))}</code>`;
+          const r = evalList(expr, args);
+          if (!r.ok) {
+            const e = r.error;
+            if (e.type === 'NameError' && e.message.includes(`'${p.name}'`)) {
+              return fail(1, `The smaller input should be a value made from ${esc(params())}, like <code>${p.params[0] === 's' ? 's[1:]' : 'n - 1'}</code>, not a call.`);
+            }
+            if (e.type === 'SyntaxError') return fail(1, `<code>${esc(expr)}</code> isn't a Python expression I can read.`);
+            return fail(1, `${where}, <code>${esc(expr)}</code> gives ${esc(e.type)}: ${esc(e.message)}.`);
+          }
+          const vals = r.value;
+          if (!Array.isArray(vals) || vals.length !== p.params.length) {
+            const n = p.params.length;
+            return fail(1, `<code>${esc(p.name)}</code> takes ${n} input${n === 1 ? '' : 's'}, so write ${n === 1 ? 'one value' : `${n} values separated by commas, like <code>n - 1, m</code>`}.`);
+          }
+          const reprs = vals.map((v) => PyMini.repr(v));
+          for (let j = 0; j < vals.length; j++) {
+            const want = PyMini.typeName(PyMini.run(`def __v():\n    return ${args[j]}\n`, '__v()').value);
+            const got = PyMini.typeName(vals[j]);
+            if (want !== got) {
+              const hint = want === 'int' && got === 'float' ? ' Use <code>//</code> to divide without a decimal part.' : '';
+              return fail(1, `${where}, the input for <code>${esc(p.params[j])}</code> would be <code>${esc(reprs[j])}</code>, which is ${article(got)} ${esc(got)}. It has to be ${article(want)} ${esc(want)}, like <code>${esc(p.params[j])}</code>.${hint}`);
+            }
+          }
+          const before = sizeOf(args);
+          const after = sizeOf(reprs);
+          if (before !== null && after !== null && !(after < before)) {
+            return fail(1, `${where}, the smaller call would be <code>${esc(call(reprs))}</code>, which isn't smaller. Each call has to move toward the smallest input, or it never stops.`);
+          }
+          if (!staff(reprs)) {
+            return fail(1, `${where}, the smaller call would be <code>${esc(call(reprs))}</code>, which isn't an input ${esc(p.name)} can take.`);
+          }
+          perCall.push(reprs);
+        }
+        all.push(perCall);
+      }
+      s.smallerArgs = all;
+      s.done[0] = true;
+      s.msg[1] = { ok: true, html: 'Good. Each of these calls is smaller.' };
+      return true;
+    }
+
+    function smallerCallText(j) { return `${p.name}(${s.smaller[j].trim()})`; }
+
+    function checkTrust(j) {
+      const text = s.trust[j].trim();
+      const args = s.smallerArgs[0][j];
+      const r = staff(args);
+      if (!text) { s.trustStatus[j] = 'wrong'; s.msg[`t${j}`] = 'Type what it returns first.'; return; }
+      const res = PyMini.checkPrediction(text, r.value);
+      if (!res.ok) { s.trustStatus[j] = 'wrong'; s.msg[`t${j}`] = typeof r.value === 'string' ? "Strings need quotes, like 'abc'." : 'Type a Python value, like 6 or [3, 2, 1].'; }
+      else if (res.match) s.trustStatus[j] = 'correct';
+      else { s.trustStatus[j] = 'wrong'; s.msg[`t${j}`] = 'Not quite. Go by what the docstring says it returns.'; }
+      s.done[1] = s.trustStatus.every((t) => t === 'correct' || t === 'shown');
+    }
+
+    function checkCombine() {
+      const expr = s.combine.trim();
+      if (!expr) return fail(3, 'Type the expression to return first.');
+      s.tries++;
+      const rows = [];
+      let firstProblem = null;
+      p.examples.forEach((args, i) => {
+        const allowed = s.smallerArgs[i].map((a) => a.join(', '));
+        const r = py(`${p.solution}\ndef __combine(${params()}):\n    return ${expr}\n`, `__combine(${args.join(', ')})`);
+        const top = r.nodes[0];
+        const kids = top ? top.children.map((id) => r.nodes[id]) : [];
+        const stray = kids.find((c) => c.name === p.name && !allowed.includes(c.args.join(', ')));
+        const used = new Set(kids.filter((c) => c.name === p.name).map((c) => c.args.join(', ')));
+        let note = null;
+        let value = null;
+        if (stray) {
+          note = `calls <code>${esc(callText(stray))}</code>`;
+          firstProblem = firstProblem || `Your expression calls <code>${esc(callText(stray))}</code>. Use only the smaller call${p.calls > 1 ? 's' : ''} from step 1: ${s.smaller.map((_, j) => `<code>${esc(smallerCallText(j))}</code>`).join(' and ')}.`;
+        } else if (!top) {
+          note = 'can\'t read it';
+          firstProblem = firstProblem || `<code>${esc(expr)}</code> isn't a Python expression I can read.`;
+        } else if (!r.ok) {
+          note = `${esc(r.error.type)}: ${esc(r.error.message)}`;
+          firstProblem = firstProblem || `For <code>${esc(call(args))}</code>, it stops with ${esc(r.error.type)}: ${esc(r.error.message)}.`;
+        } else if (allowed.some((a) => !used.has(a))) {
+          value = r.valueRepr;
+          note = 'doesn\'t use the smaller call';
+          firstProblem = firstProblem || `Build the answer from ${s.smaller.map((_, j) => `<code>${esc(smallerCallText(j))}</code>`).join(' and ')}. ${p.calls > 1 ? 'Use both smaller calls.' : 'That call is what makes the function recursive.'}`;
+        } else {
+          value = r.valueRepr;
+        }
+        const ok = !note && PyMini.checkPrediction(p.want[i], r.value).match;
+        rows.push({ value, note, ok });
+      });
+      s.rows = rows;
+      const good = rows.filter((x) => x.ok).length;
+      if (good === rows.length) {
+        s.done[2] = true;
+        s.msg[3] = { ok: true, html: `All ${rows.length} examples match.` };
+        return true;
+      }
+      let html = firstProblem || `${good} of ${rows.length} examples match. Compare your column with the one before it.`;
+      if (!firstProblem && s.tries >= 3) html += ' If nothing works, the smaller input from step 1 may not be the one you need.';
+      return fail(3, html);
+    }
+
+    function assembled(withPlaceholders) {
+      const dots = withPlaceholders ? '...' : '';
+      const lines = [`def ${p.name}(${params()}):`, ...docLines()];
+      s.bases.forEach((b, i) => {
+        lines.push(`    ${i === 0 ? 'if' : 'elif'} ${b.cond.trim() || dots}:`);
+        lines.push(`        return ${b.value.trim() || dots}`);
+      });
+      lines.push(`    return ${s.done[2] ? s.combine.trim() : dots}`);
+      return lines.join('\n') + '\n';
+    }
+
+    function chainText(r) {
+      if (r.failedNode === null || r.failedNode === undefined) return '';
+      const path = [];
+      for (let id = r.failedNode; id !== null; id = r.nodes[id].parent) path.unshift(r.nodes[id]);
+      const code = (n) => `<code>${esc(callText(n))}</code>`;
+      // The first calls show where it started; the last ones show where it was heading.
+      if (path.length <= 5) return path.map(code).join(' → ');
+      return [...path.slice(0, 2).map(code), '…', ...path.slice(-2).map(code)].join(' → ');
+    }
+
+    function checkBase() {
+      if (s.bases.some((b) => !b.cond.trim() || !b.value.trim())) return fail(4, 'Fill in the condition and the value for each base case.');
+      const code = assembled(false);
+      const all = [...p.examples, ...p.tests];
+      const tests = all.map((args, i) => {
+        const r = py(code, call(args));
+        const want = p.expected[i];
+        if (r.ok && PyMini.checkPrediction(want, r.value).match) return { args, ok: true, got: r.valueRepr, want };
+        let why;
+        if (r.ok) why = `returned <code>${esc(r.valueRepr)}</code>`;
+        else if (r.error.type === 'RecursionError' || r.error.type === 'LimitError') why = `never reached a base case: ${chainText(r)}`;
+        else why = `stopped with ${esc(r.error.type)}: ${esc(r.error.message)}`;
+        return { args, ok: false, want, why };
+      });
+      s.tests = tests;
+      const passed = tests.filter((t) => t.ok).length;
+      s.done[3] = passed === tests.length;
+      if (s.done[3]) {
+        s.msg[4] = { ok: true, html: 'Your function works.' };
+        return true;
+      }
+      return fail(4, `${passed} of ${tests.length} tests pass. See which ones fail below.`);
+    }
+
+    function fail(step, html) {
+      s.msg[step] = { ok: false, html };
+      return false;
+    }
+
+    // Changing a step's answer undoes the steps after it.
+    function invalidate(step) {
+      for (let i = step - 1; i < 4; i++) s.done[i] = false;
+      if (step <= 1) {
+        s.smallerArgs = null;
+        s.trustStatus = new Array(p.calls).fill('pending');
+      }
+      if (step <= 3) s.rows = null;
+      s.tests = null;
+      for (let i = step; i <= 4; i++) delete s.msg[i];
+    }
+
+    // ── Rendering ──
+
+    const fb = (m) => (m ? `<span class="fb ${m.ok ? 'good' : 'bad'}" role="status">${m.html}</span>` : '<span class="fb" role="status"></span>');
+    const input = (id, value, placeholder, label, wide = true) =>
+      `<input class="guess${wide ? ' wide' : ''}" id="ap-${id}" value="${esc(value)}" placeholder="${esc(placeholder)}" aria-label="${esc(label)}" autocomplete="off" autocapitalize="off" spellcheck="false">`;
+    const checkBtn = (act, label = 'Check') => `<button class="btn check" type="button" data-act="${act}">${label}</button>`;
+
+    function stepCard(n, title, active, body) {
+      const done = s.done[n - 1];
+      const locked = n > 1 && !s.done[n - 2];
+      const cls = done ? 'is-done' : locked ? 'is-locked' : active ? 'is-active' : '';
+      return `<li class="step ${cls}" data-step="${n}">
+        <div class="step-head"><span class="step-num">${n}</span><h3>${title}</h3>${done ? '<span class="step-mark">✓ done</span>' : ''}</div>
+        ${locked ? `<p class="hint">Finish step ${n - 1} first.</p>` : body}
+      </li>`;
+    }
+
+    function step1() {
+      const word = p.params.length === 1 ? `<code>${p.params[0]}</code>` : p.params.map((x) => `<code>${x}</code>`).join(' and ');
+      const q = p.calls > 1
+        ? `<p class="q">${esc(p.hint)} Write ${p.params.length > 1 ? 'the inputs' : 'each one'} using ${word}.</p>`
+        : `<p class="q">What smaller input can <code>${p.name}</code> call itself on? Write it using ${word}.</p>`;
+      const rows = s.smaller.map((v, j) => `<div class="tmpl">${p.calls > 1 ? `<span class="label">Choice ${j + 1}</span>` : ''}<code>${esc(p.name)}(</code>${input(`small-${j}`, v, `using ${p.params.join(', ')}`, `Smaller input${p.calls > 1 ? ` for choice ${j + 1}` : ''}`)}<code>)</code></div>`).join('');
+      let mapping = '';
+      if (s.done[0]) {
+        mapping = `<ul class="mapping">${p.examples.map((args, i) => `<li>For <code>${esc(call(args))}</code>: ${s.smallerArgs[i].map((a) => `<code>${esc(call(a))}</code>`).join(' and ')}</li>`).join('')}</ul>`;
+      }
+      return `${q}${rows}<div class="actions">${checkBtn('small')}${fb(s.msg[1])}</div>${mapping}`;
+    }
+
+    function step2() {
+      const rows = s.smallerArgs[0].map((args, j) => {
+        const st = s.trustStatus[j];
+        const r = staff(args);
+        let slot;
+        if (st === 'correct' || st === 'shown') {
+          slot = `<code class="val ${st === 'correct' ? 'ok' : 'shown'}">${esc(r.valueRepr)}</code><span class="mark ${st === 'correct' ? 'ok' : 'shown'}">${st === 'correct' ? '✓ correct' : 'shown'}</span>`;
+        } else {
+          slot = `${input(`trust-${j}`, s.trust[j], '?', `What ${call(args)} returns`, false)}${checkBtn(`trust-${j}`)}${st === 'wrong' ? `<span class="nope">${esc(s.msg[`t${j}`] || 'Not quite.')}</span><button class="linkish" type="button" data-act="show-${j}">Show answer</button>` : ''}`;
+        }
+        return `<div class="tmpl"><code>${esc(call(args))}</code><span class="ret">returns</span>${slot}</div>`;
+      }).join('');
+      return `<p class="q">Don't trace ${p.calls > 1 ? 'these calls' : 'this call'}. Go by the docstring: what does ${p.calls > 1 ? 'each one' : 'it'} return?</p>${rows}`;
+    }
+
+    function step3() {
+      const calls = s.smaller.map((_, j) => smallerCallText(j));
+      const q = `<p class="q">Build the answer for the whole input from the smaller call${p.calls > 1 ? 's' : ''}. What should <code>${esc(p.name)}(${esc(params())})</code> return? Write it as code that uses ${calls.map((c) => `<code>${esc(c)}</code>`).join(' and ')}.</p>`;
+      const row = `<div class="tmpl"><code>return</code>${input('combine', s.combine, `use ${calls.join(' and ')}`, 'Expression to return')}</div>`;
+      const head = `<tr><th>${esc(params())}</th>${calls.map((c) => `<th><code>${esc(c)}</code></th>`).join('')}<th>Should return</th><th>Yours</th></tr>`;
+      const body = p.examples.map((args, i) => {
+        const trusted = s.smallerArgs[i].map((a) => `<td><code>${esc(staff(a).valueRepr)}</code></td>`).join('');
+        const r = s.rows && s.rows[i];
+        let yours = '<td class="hint">—</td>';
+        if (r) {
+          const val = r.value !== null ? `<code>${esc(r.value)}</code>` : '';
+          yours = `<td>${val}${r.note ? ` <span class="no">${r.note}</span>` : ''} ${r.ok ? '<span class="yes">✓</span>' : r.note ? '' : '<span class="no">✗</span>'}</td>`;
+        }
+        return `<tr><td><code>${esc(args.join(', '))}</code></td>${trusted}<td><code>${esc(p.want[i])}</code></td>${yours}</tr>`;
+      }).join('');
+      return `${q}${row}<div class="actions">${checkBtn('combine')}${fb(s.msg[3])}</div><div class="table-wrap"><table class="mini">${head}${body}</table></div>`;
+    }
+
+    function step4() {
+      const q = `<p class="q">Last, the base case: the smallest input${p.calls > 1 ? 's' : ''}, where the answer needs no smaller call. Every chain of smaller inputs from step 1 has to reach one.</p>`;
+      const rows = s.bases.map((b, i) => `
+        <div class="tmpl"><code>${i === 0 ? 'if' : 'elif'}</code>${input(`cond-${i}`, b.cond, `condition using ${params()}`, `Condition for base case ${i + 1}`)}<code>:</code>${i > 0 ? `<button class="linkish" type="button" data-act="remove-${i}">Remove</button>` : ''}</div>
+        <div class="tmpl indent"><code>return</code>${input(`value-${i}`, b.value, 'value', `Value for base case ${i + 1}`)}</div>`).join('');
+      const add = s.bases.length < 3 ? '<button class="linkish" type="button" data-act="add-base">Add another base case</button>' : '';
+      return `${q}${rows}<div class="actions">${checkBtn('base', 'Check and run tests')}${add}${fb(s.msg[4])}</div>`;
+    }
+
+    function renderResult() {
+      if (!s.tests) { resultEl.hidden = true; resultEl.innerHTML = ''; return; }
+      const passed = s.tests.filter((t) => t.ok).length;
+      const items = s.tests.map((t) => (t.ok
+        ? `<li><span class="yes">✓</span><code>${esc(call(t.args))}</code><span class="why">returns <code>${esc(t.got)}</code></span></li>`
+        : `<li><span class="no">✗</span><code>${esc(call(t.args))}</code><span class="why">should return <code>${esc(t.want)}</code>, but ${t.why}</span></li>`)).join('');
+      const allOk = passed === s.tests.length;
+      const next = Number($('problem').value) + 1;
+      resultEl.innerHTML = `
+        <h3>${allOk ? `All ${s.tests.length} tests pass` : `${passed} of ${s.tests.length} tests pass`}</h3>
+        <ul class="tests">${items}</ul>
+        <div class="actions">
+          <button class="btn primary" type="button" data-act="trace">Trace it, call by call</button>
+          ${allOk && next < PROBLEMS.length ? '<button class="btn" type="button" data-act="next">Next problem</button>' : ''}
+        </div>`;
+      resultEl.hidden = false;
+    }
+
+    function render() {
+      // Keep the caret where it was, since rendering replaces the inputs.
+      const active = document.activeElement;
+      const keep = active && active.id && active.id.startsWith('ap-') && active.tagName === 'INPUT'
+        ? { id: active.id, a: active.selectionStart, b: active.selectionEnd } : null;
+      const current = s.done.indexOf(false) + 1;
+      stepsEl.innerHTML = [
+        stepCard(1, p.calls > 1 ? 'Smaller inputs' : 'Smaller input', current === 1, step1()),
+        stepCard(2, 'Trust the smaller call' + (p.calls > 1 ? 's' : ''), current === 2, s.done[0] ? step2() : ''),
+        stepCard(3, 'Build the answer from ' + (p.calls > 1 ? 'them' : 'it'), current === 3, s.done[1] ? step3() : ''),
+        stepCard(4, 'Base case', current === 4, s.done[2] ? step4() : ''),
+      ].join('');
+      $('sofar').textContent = assembled(true);
+      const done = s.done.filter(Boolean).length;
+      $('progress').innerHTML = `<strong>${done}</strong> of 4 steps${done === 4 ? ' · done' : ''}`;
+      $('bar').style.width = `${(100 * done) / 4}%`;
+      renderResult();
+      if (keep) {
+        const el = document.getElementById(keep.id);
+        if (el) { el.focus(); try { el.setSelectionRange(keep.a, keep.b); } catch (e) { /* not a text input */ } }
+      }
+    }
+
+    function focus(id) {
+      const el = document.getElementById(`ap-${id}`);
+      if (el) el.focus();
+    }
+
+    function act(name) {
+      if (name === 'small') {
+        if (checkSmaller()) { render(); focus('trust-0'); } else render();
+      } else if (name.startsWith('trust-')) {
+        const j = Number(name.slice(6));
+        checkTrust(j);
+        render();
+        if (s.trustStatus[j] === 'correct') focus(s.done[1] ? 'combine' : `trust-${j + 1}`);
+        else { const el = document.getElementById(`ap-trust-${j}`); if (el) { el.focus(); el.select(); } }
+      } else if (name.startsWith('show-')) {
+        const j = Number(name.slice(5));
+        s.trustStatus[j] = 'shown';
+        s.done[1] = s.trustStatus.every((t) => t === 'correct' || t === 'shown');
+        render();
+        focus(s.done[1] ? 'combine' : `trust-${j + 1}`);
+      } else if (name === 'combine') {
+        if (checkCombine()) { render(); focus('cond-0'); } else render();
+      } else if (name === 'base') {
+        checkBase();
+        render();
+      } else if (name === 'add-base') {
+        s.bases.push({ cond: '', value: '' });
+        invalidate(4);
+        render();
+        focus(`cond-${s.bases.length - 1}`);
+      } else if (name.startsWith('remove-')) {
+        s.bases.splice(Number(name.slice(7)), 1);
+        invalidate(4);
+        render();
+      } else if (name === 'trace') {
+        const first = p.examples[0];
+        onTrace(assembled(false), call(first));
+      } else if (name === 'next') {
+        choose(Number($('problem').value) + 1);
+        focus('small-0');
+      }
+    }
+
+    const panel = document.getElementById('panel-approach');
+    panel.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button[data-act]');
+      if (btn) act(btn.dataset.act);
+    });
+    panel.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Enter' || !ev.target.matches('input.guess')) return;
+      ev.preventDefault();
+      const id = ev.target.id.slice(3);
+      if (id.startsWith('small-')) act('small');
+      else if (id.startsWith('trust-')) act(id);
+      else if (id === 'combine') act('combine');
+      else if (id.startsWith('cond-') || id.startsWith('value-')) act('base');
+    });
+    panel.addEventListener('input', (ev) => {
+      const el = ev.target;
+      if (!el.matches('input.guess')) return;
+      const id = el.id.slice(3);
+      let step = 0;
+      if (id.startsWith('small-')) { s.smaller[Number(id.slice(6))] = el.value; step = 1; }
+      else if (id.startsWith('trust-')) { s.trust[Number(id.slice(6))] = el.value; return; }
+      else if (id === 'combine') { s.combine = el.value; step = 3; }
+      else if (id.startsWith('cond-')) { s.bases[Number(id.slice(5))].cond = el.value; step = 4; }
+      else if (id.startsWith('value-')) { s.bases[Number(id.slice(6))].value = el.value; step = 4; }
+      if (!step) return;
+      const wasDone = s.done.slice(step - 1).some(Boolean) || s.msg[step] || (step === 4 && s.tests);
+      if (wasDone) { invalidate(step); render(); } else $('sofar').textContent = assembled(true);
+    });
+    $('problem').addEventListener('change', () => choose(Number($('problem').value)));
+
+    choose(0);
+  }
+
+  // ── Tabs ────────────────────────────────────────────────────────────────────
+
+  const tabs = [...document.querySelectorAll('.tab')];
+  function selectTab(tab) {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t));
+    t.addEventListener('keydown', (ev) => {
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+        const next = tabs[(i + (ev.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        selectTab(next);
+        next.focus();
+      }
+    });
+  });
+
+  const pythonTracer = createTracer(document.getElementById('panel-python'), PYTHON);
+  createTracer(document.getElementById('panel-gleam'), GLEAM);
+  createApproach((code, call) => {
+    selectTab(document.getElementById('tab-python'));
+    pythonTracer.load(code, call, 'custom');
+    document.getElementById('panel-python').scrollIntoView({ block: 'start' });
+  });
+  selectTab(tabs[0]);
+})();
+</script>
+
+</body>
+</html>
